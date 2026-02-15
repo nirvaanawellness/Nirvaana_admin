@@ -1,52 +1,109 @@
-import { useEffect } from "react";
-import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
-  return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
-};
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from '@/components/ui/sonner';
+import Login from './pages/Login';
+import TherapistDashboard from './pages/therapist/Dashboard';
+import TherapistAttendance from './pages/therapist/Attendance';
+import TherapistServiceEntry from './pages/therapist/ServiceEntry';
+import TherapistPerformance from './pages/therapist/Performance';
+import AdminDashboard from './pages/admin/Dashboard';
+import AdminProperties from './pages/admin/Properties';
+import AdminTherapists from './pages/admin/Therapists';
+import AdminServices from './pages/admin/Services';
+import AdminReports from './pages/admin/Reports';
+import AdminIncentives from './pages/admin/Incentives';
+import './App.css';
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+    if (token && userData) {
+      setUser(JSON.parse(userData));
+    }
+    setLoading(false);
+  }, []);
+
+  const handleLogin = (userData, token) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="App">
+    <div className="App min-h-screen bg-background">
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
+          <Route
+            path="/login"
+            element={!user ? <Login onLogin={handleLogin} /> : <Navigate to={user.role === 'super_admin' ? '/admin' : '/therapist'} />}
+          />
+          
+          {/* Therapist Routes */}
+          <Route
+            path="/therapist"
+            element={user?.role === 'therapist' ? <TherapistDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/therapist/attendance"
+            element={user?.role === 'therapist' ? <TherapistAttendance user={user} onLogout={handleLogout} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/therapist/service-entry"
+            element={user?.role === 'therapist' ? <TherapistServiceEntry user={user} onLogout={handleLogout} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/therapist/performance"
+            element={user?.role === 'therapist' ? <TherapistPerformance user={user} onLogout={handleLogout} /> : <Navigate to="/login" />}
+          />
+          
+          {/* Admin Routes */}
+          <Route
+            path="/admin"
+            element={user?.role === 'super_admin' ? <AdminDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/properties"
+            element={user?.role === 'super_admin' ? <AdminProperties user={user} onLogout={handleLogout} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/therapists"
+            element={user?.role === 'super_admin' ? <AdminTherapists user={user} onLogout={handleLogout} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/services"
+            element={user?.role === 'super_admin' ? <AdminServices user={user} onLogout={handleLogout} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/reports"
+            element={user?.role === 'super_admin' ? <AdminReports user={user} onLogout={handleLogout} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/incentives"
+            element={user?.role === 'super_admin' ? <AdminIncentives user={user} onLogout={handleLogout} /> : <Navigate to="/login" />}
+          />
+          
+          <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
+      <Toaster position="top-center" richColors />
     </div>
   );
 }
