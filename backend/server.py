@@ -778,6 +778,226 @@ async def get_expense_summary(
     
     return summary
 
+# ==================== OTP PASSWORD CHANGE ====================
+import random
+import string
+from models import OTPRequest, OTPVerify, PasswordChange
+
+@api_router.post("/auth/request-otp")
+async def request_otp(data: OTPRequest):
+    """Request OTP for password change - sent to admin email"""
+    # Find user
+    user = await db.users.find_one({"email": data.email})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Only allow admins to change password via OTP
+    if user.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="OTP password change is only available for admin users")
+    
+    # Generate 6-digit OTP
+    otp = ''.join(random.choices(string.digits, k=6))
+    
+    # Store OTP with expiry (10 minutes)
+    otp_record = {
+        "email": data.email,
+        "otp": otp,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "expires_at": (datetime.now(timezone.utc).replace(microsecond=0) + 
+                       __import__('datetime').timedelta(minutes=10)).isoformat(),
+        "used": False
+    }
+    
+    # Remove any existing OTP for this email
+    await db.otp_records.delete_many({"email": data.email})
+    
+    # Insert new OTP
+    await db.otp_records.insert_one(otp_record)
+    
+    # Send OTP via email
+    try:
+        result = await email_service.send_otp_email(
+            email=data.email,
+            otp=otp,
+            user_name=user.get("full_name", "Admin")
+        )
+        if result.get("success"):
+            return {"message": "OTP sent to your registered email", "email_masked": f"***{data.email[-10:]}"}
+        else:
+            # If email fails, return OTP in response (for development)
+            return {"message": "OTP generated (email delivery failed)", "otp": otp, "note": "Use this OTP to change password"}
+    except Exception as e:
+        # Return OTP in response if email fails
+        return {"message": "OTP generated (email service unavailable)", "otp": otp, "note": "Use this OTP to change password"}
+
+@api_router.post("/auth/verify-otp")
+async def verify_otp(data: OTPVerify):
+    """Verify OTP without changing password"""
+    otp_record = await db.otp_records.find_one({
+        "email": data.email,
+        "otp": data.otp,
+        "used": False
+    })
+    
+    if not otp_record:
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+    
+    # Check expiry
+    expires_at = datetime.fromisoformat(otp_record["expires_at"].replace('Z', '+00:00'))
+    if datetime.now(timezone.utc) > expires_at:
+        raise HTTPException(status_code=400, detail="OTP has expired. Please request a new one.")
+    
+    return {"message": "OTP verified successfully", "valid": True}
+
+@api_router.post("/auth/change-password")
+async def change_password(data: PasswordChange):
+    """Change password after OTP verification"""
+    # Verify OTP
+    otp_record = await db.otp_records.find_one({
+        "email": data.email,
+        "otp": data.otp,
+        "used": False
+    })
+    
+    if not otp_record:
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+    
+    # Check expiry
+    expires_at = datetime.fromisoformat(otp_record["expires_at"].replace('Z', '+00:00'))
+    if datetime.now(timezone.utc) > expires_at:
+        raise HTTPException(status_code=400, detail="OTP has expired. Please request a new one.")
+    
+    # Validate password
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    
+    # Update password
+    new_hash = get_password_hash(data.new_password)
+    result = await db.users.update_one(
+        {"email": data.email},
+        {"$set": {"password_hash": new_hash}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Mark OTP as used
+    await db.otp_records.update_one(
+        {"email": data.email, "otp": data.otp},
+        {"$set": {"used": True}}
+    )
+    
+    return {"message": "Password changed successfully"}
+
+# ==================== FORECASTING ====================
+@api_router.get("/analytics/forecast")
+async def get_forecast(current_user: dict = Depends(get_current_admin)):
+    """Get next month revenue forecast using weighted moving average and linear regression"""
+    import numpy as np
+    
+    # Get services from past 6 months
+    now = datetime.now(timezone.utc)
+    six_months_ago = now.replace(month=now.month - 6 if now.month > 6 else now.month + 6, 
+                                  year=now.year if now.month > 6 else now.year - 1)
+    
+    # Build monthly data
+    monthly_data = []
+    for i in range(6, 0, -1):
+        target_month = now.month - i
+        target_year = now.year
+        if target_month <= 0:
+            target_month += 12
+            target_year -= 1
+        
+        date_prefix = f"{target_year}-{target_month:02d}"
+        
+        services = await db.services.find({
+            "date": {"$regex": f"^{date_prefix}"}
+        }, {"_id": 0, "base_price": 1}).to_list(10000)
+        
+        month_revenue = sum(s["base_price"] for s in services)
+        month_services = len(services)
+        
+        monthly_data.append({
+            "month": target_month,
+            "year": target_year,
+            "label": f"{target_year}-{target_month:02d}",
+            "revenue": month_revenue,
+            "services": month_services
+        })
+    
+    # Calculate weighted moving average (recent months weighted more)
+    weights = [1, 1.5, 2, 2.5, 3, 3.5]  # Increasing weights for recent months
+    revenues = [m["revenue"] for m in monthly_data]
+    
+    if sum(revenues) == 0:
+        return {
+            "forecast_month": (now.month % 12) + 1,
+            "forecast_year": now.year if now.month < 12 else now.year + 1,
+            "predicted_revenue": 0,
+            "predicted_services": 0,
+            "confidence": "low",
+            "method": "insufficient_data",
+            "historical_data": monthly_data
+        }
+    
+    weighted_avg = sum(r * w for r, w in zip(revenues, weights)) / sum(weights)
+    
+    # Linear regression for trend analysis
+    x = np.array(range(len(revenues)))
+    y = np.array(revenues)
+    
+    # Calculate regression coefficients
+    n = len(x)
+    sum_x = np.sum(x)
+    sum_y = np.sum(y)
+    sum_xy = np.sum(x * y)
+    sum_x2 = np.sum(x * x)
+    
+    slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x) if (n * sum_x2 - sum_x * sum_x) != 0 else 0
+    intercept = (sum_y - slope * sum_x) / n
+    
+    # Predict next month (index = 6)
+    regression_forecast = intercept + slope * 6
+    
+    # Combine weighted avg and regression (60% regression, 40% weighted avg)
+    combined_forecast = (0.6 * regression_forecast + 0.4 * weighted_avg) if regression_forecast > 0 else weighted_avg
+    
+    # Calculate average services and apply growth rate
+    avg_services = sum(m["services"] for m in monthly_data) / len(monthly_data) if monthly_data else 0
+    service_growth = 1 + (slope / (sum_y / n) if sum_y > 0 else 0)  # Growth rate from revenue trend
+    predicted_services = int(avg_services * max(0.8, min(1.5, service_growth)))
+    
+    # Determine confidence based on data consistency
+    variance = np.var(revenues) if len(revenues) > 1 else 0
+    mean_revenue = np.mean(revenues) if revenues else 0
+    cv = (np.sqrt(variance) / mean_revenue * 100) if mean_revenue > 0 else 100  # Coefficient of variation
+    
+    if cv < 20:
+        confidence = "high"
+    elif cv < 40:
+        confidence = "medium"
+    else:
+        confidence = "low"
+    
+    next_month = (now.month % 12) + 1
+    next_year = now.year if now.month < 12 else now.year + 1
+    
+    return {
+        "forecast_month": next_month,
+        "forecast_year": next_year,
+        "forecast_label": f"{next_year}-{next_month:02d}",
+        "predicted_revenue": round(max(0, combined_forecast), 2),
+        "predicted_services": max(0, predicted_services),
+        "weighted_avg_forecast": round(weighted_avg, 2),
+        "regression_forecast": round(max(0, regression_forecast), 2),
+        "trend": "growing" if slope > 0 else "declining" if slope < 0 else "stable",
+        "growth_rate_percent": round(slope / mean_revenue * 100 if mean_revenue > 0 else 0, 1),
+        "confidence": confidence,
+        "method": "weighted_moving_average_with_regression",
+        "historical_data": monthly_data
+    }
+
 app.include_router(api_router)
 
 app.add_middleware(
