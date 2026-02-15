@@ -1,20 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { 
-  LayoutDashboard, Building2, Users, Package, FileText, Award, LogOut,
-  DollarSign, TrendingUp, UserCheck, Calendar, Filter, X, Download, Receipt
+  Building2, Users, Package, FileText, Award, LogOut,
+  DollarSign, TrendingUp, UserCheck, Filter, X, Download, Receipt,
+  ChevronLeft, ChevronRight, RotateCcw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+// Generate months for timeline (past 12 months + current)
+const generateMonths = () => {
+  const months = [];
+  const now = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      year: date.getFullYear(),
+      month: date.getMonth() + 1,
+      label: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      shortLabel: date.toLocaleDateString('en-US', { month: 'short' }),
+      isCurrent: i === 0
+    });
+  }
+  return months;
+};
 
 const AdminDashboard = ({ user, onLogout }) => {
   const [analytics, setAnalytics] = useState(null);
@@ -23,15 +41,44 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [therapists, setTherapists] = useState([]);
   const [allServices, setAllServices] = useState([]);
   
+  // Timeline state
+  const months = useMemo(() => generateMonths(), []);
+  const [selectedMonth, setSelectedMonth] = useState(null); // null = today only
+  const [timelineOffset, setTimelineOffset] = useState(0);
+  
   // Filters
   const [selectedProperties, setSelectedProperties] = useState([]);
   const [selectedTherapists, setSelectedTherapists] = useState([]);
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   
   // Dialog for detailed view
   const [detailDialog, setDetailDialog] = useState({ open: false, type: '', data: [] });
+
+  // Calculate date range based on selection
+  const getDateRange = () => {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    
+    if (!selectedMonth) {
+      // Default: Today only
+      return { from: today, to: today, label: `Today (${today})` };
+    }
+    
+    const { year, month, isCurrent } = selectedMonth;
+    const firstDay = `${year}-${String(month).padStart(2, '0')}-01`;
+    
+    if (isCurrent) {
+      // Current month: 1st to today
+      return { from: firstDay, to: today, label: `${selectedMonth.label} (1st to Today)` };
+    } else {
+      // Past month: Full month
+      const lastDay = new Date(year, month, 0).getDate();
+      const lastDayStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      return { from: firstDay, to: lastDayStr, label: `${selectedMonth.label} (Full Month)` };
+    }
+  };
+
+  const dateRange = useMemo(() => getDateRange(), [selectedMonth]);
 
   useEffect(() => {
     fetchInitialData();
@@ -41,7 +88,7 @@ const AdminDashboard = ({ user, onLogout }) => {
     if (properties.length > 0 || therapists.length > 0) {
       fetchFilteredData();
     }
-  }, [selectedProperties, selectedTherapists, dateFrom, dateTo]);
+  }, [selectedMonth, selectedProperties, selectedTherapists]);
 
   const fetchInitialData = async () => {
     try {
@@ -68,14 +115,18 @@ const AdminDashboard = ({ user, onLogout }) => {
       const token = localStorage.getItem('token');
       const params = new URLSearchParams();
       
+      // Apply date range
+      const { from, to } = getDateRange();
+      params.append('date_from', from);
+      params.append('date_to', to);
+      
+      // Apply property/therapist filters
       if (selectedProperties.length > 0) {
         selectedProperties.forEach(p => params.append('property_id', p));
       }
       if (selectedTherapists.length > 0) {
         selectedTherapists.forEach(t => params.append('therapist_id', t));
       }
-      if (dateFrom) params.append('date_from', dateFrom);
-      if (dateTo) params.append('date_to', dateTo);
       
       const servicesRes = await axios.get(`${API}/services?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -108,11 +159,19 @@ const AdminDashboard = ({ user, onLogout }) => {
     }
   };
 
-  const handleResetFilters = () => {
+  const handleResetToToday = () => {
+    setSelectedMonth(null);
     setSelectedProperties([]);
     setSelectedTherapists([]);
-    setDateFrom('');
-    setDateTo('');
+  };
+
+  const handleMonthSelect = (month) => {
+    if (selectedMonth?.year === month.year && selectedMonth?.month === month.month) {
+      // Clicking same month again -> deselect (back to today)
+      setSelectedMonth(null);
+    } else {
+      setSelectedMonth(month);
+    }
   };
 
   const toggleProperty = (propertyId) => {
@@ -136,7 +195,6 @@ const AdminDashboard = ({ user, onLogout }) => {
   };
 
   const downloadExcel = () => {
-    // Prepare CSV data
     const headers = ['Date', 'Therapist Name', 'Customer Name', 'Customer Phone', 'Amount (No GST)', 'GST', 'Hotel Name', 'City', 'Therapy Name', 'Amount Paid To', 'Payment Mode'];
     
     const rows = allServices.map(service => {
@@ -164,23 +222,22 @@ const AdminDashboard = ({ user, onLogout }) => {
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `nirvaana-sales-report-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
+    link.href = URL.createObjectURL(blob);
+    link.download = `nirvaana-sales-${dateRange.from}-to-${dateRange.to}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
-    toast.success('Excel report downloaded!');
+    toast.success('Report downloaded!');
   };
 
   const revenueData = analytics ? [
-    { name: 'Hotel', value: analytics.hotel_received, color: '#B89D62' },
-    { name: 'Nirvaana', value: analytics.nirvaana_received, color: '#88856A' }
-  ] : [];
+    { name: 'Paid to Hotel', value: analytics.hotel_received, color: '#B89D62' },
+    { name: 'Paid to Nirvaana', value: analytics.nirvaana_received, color: '#88856A' }
+  ].filter(d => d.value > 0) : [];
 
-  const hasActiveFilters = selectedProperties.length > 0 || selectedTherapists.length > 0 || dateFrom || dateTo;
+  const hasActiveFilters = selectedProperties.length > 0 || selectedTherapists.length > 0 || selectedMonth !== null;
+  const visibleMonths = months.slice(Math.max(0, timelineOffset), timelineOffset + 6);
 
   return (
     <div className="min-h-screen bg-background">
@@ -200,9 +257,11 @@ const AdminDashboard = ({ user, onLogout }) => {
             >
               <Filter className="w-4 h-4 mr-2" strokeWidth={1.5} />
               Filters
-              {hasActiveFilters && <span className="ml-2 bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                {(selectedProperties.length || 0) + (selectedTherapists.length || 0) + (dateFrom ? 1 : 0) + (dateTo ? 1 : 0)}
-              </span>}
+              {(selectedProperties.length > 0 || selectedTherapists.length > 0) && 
+                <span className="ml-2 bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                  {selectedProperties.length + selectedTherapists.length}
+                </span>
+              }
             </Button>
             <Button 
               variant="outline" 
@@ -223,31 +282,90 @@ const AdminDashboard = ({ user, onLogout }) => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {/* Welcome + Month Timeline */}
         <div className="glass rounded-2xl p-6">
-          <h2 className="text-xl font-serif text-foreground mb-2">Welcome, {user.full_name}</h2>
-          <p className="text-sm text-muted-foreground">Admin Portal - Operations Management</p>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-serif text-foreground mb-1">Welcome, {user.full_name}</h2>
+              <p className="text-sm text-muted-foreground">Admin Portal - Operations Management</p>
+            </div>
+            
+            {/* Month Timeline Scroller */}
+            <div className="flex items-center gap-2" data-testid="month-timeline">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTimelineOffset(Math.max(0, timelineOffset - 1))}
+                disabled={timelineOffset === 0}
+                className="h-8 w-8"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              
+              <div className="flex gap-1 overflow-hidden">
+                {visibleMonths.map((m) => (
+                  <button
+                    key={`${m.year}-${m.month}`}
+                    onClick={() => handleMonthSelect(m)}
+                    data-testid={`month-${m.year}-${m.month}`}
+                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                      selectedMonth?.year === m.year && selectedMonth?.month === m.month
+                        ? 'bg-primary text-white'
+                        : m.isCurrent
+                        ? 'bg-primary/20 text-primary hover:bg-primary/30'
+                        : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                    }`}
+                  >
+                    {m.shortLabel}
+                    {m.isCurrent && <span className="ml-1">●</span>}
+                  </button>
+                ))}
+              </div>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTimelineOffset(Math.min(months.length - 6, timelineOffset + 1))}
+                disabled={timelineOffset >= months.length - 6}
+                className="h-8 w-8"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+              
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResetToToday}
+                  data-testid="reset-to-today-button"
+                  className="ml-2"
+                >
+                  <RotateCcw className="w-3 h-3 mr-1" />
+                  Reset
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          {/* Date Range Indicator */}
+          <div className="mt-4 pt-4 border-t border-border/50">
+            <p className="text-sm text-muted-foreground">
+              Showing data for: <span className="font-medium text-foreground">{dateRange.label}</span>
+            </p>
+          </div>
         </div>
 
-        {/* Filters Panel */}
+        {/* Property/Therapist Filters Panel */}
         {showFilters && (
           <div className="glass rounded-2xl p-6" data-testid="filters-panel">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-serif text-foreground">Filters</h3>
-              <div className="flex gap-2">
-                {hasActiveFilters && (
-                  <Button variant="outline" size="sm" onClick={handleResetFilters} data-testid="reset-filters-button">
-                    <X className="w-4 h-4 mr-2" strokeWidth={1.5} />
-                    Reset All
-                  </Button>
-                )}
-                <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)}>
-                  <X className="w-4 h-4" strokeWidth={1.5} />
-                </Button>
-              </div>
+              <h3 className="text-lg font-serif text-foreground">Additional Filters</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)}>
+                <X className="w-4 h-4" strokeWidth={1.5} />
+              </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Property Filter */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label className="mb-2 block">Properties</Label>
                 <div className="space-y-2 max-h-48 overflow-y-auto border border-border rounded-lg p-3">
@@ -258,10 +376,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                         checked={selectedProperties.includes(property.hotel_name)}
                         onCheckedChange={() => toggleProperty(property.hotel_name)}
                       />
-                      <label
-                        htmlFor={`property-${property.id}`}
-                        className="text-sm cursor-pointer"
-                      >
+                      <label htmlFor={`property-${property.id}`} className="text-sm cursor-pointer">
                         {property.hotel_name}
                       </label>
                     </div>
@@ -269,7 +384,6 @@ const AdminDashboard = ({ user, onLogout }) => {
                 </div>
               </div>
 
-              {/* Therapist Filter */}
               <div>
                 <Label className="mb-2 block">Therapists</Label>
                 <div className="space-y-2 max-h-48 overflow-y-auto border border-border rounded-lg p-3">
@@ -280,38 +394,12 @@ const AdminDashboard = ({ user, onLogout }) => {
                         checked={selectedTherapists.includes(therapist.user_id)}
                         onCheckedChange={() => toggleTherapist(therapist.user_id)}
                       />
-                      <label
-                        htmlFor={`therapist-${therapist.user_id}`}
-                        className="text-sm cursor-pointer"
-                      >
+                      <label htmlFor={`therapist-${therapist.user_id}`} className="text-sm cursor-pointer">
                         {therapist.full_name}
                       </label>
                     </div>
                   ))}
                 </div>
-              </div>
-
-              {/* Date Range */}
-              <div>
-                <Label htmlFor="date-from" className="mb-2 block">From Date</Label>
-                <Input
-                  id="date-from"
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  data-testid="date-from-input"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="date-to" className="mb-2 block">To Date</Label>
-                <Input
-                  id="date-to"
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  data-testid="date-to-input"
-                />
               </div>
             </div>
           </div>
@@ -375,29 +463,61 @@ const AdminDashboard = ({ user, onLogout }) => {
           </div>
         )}
 
-        {/* Revenue Chart */}
+        {/* Revenue Distribution Pie Chart */}
         {!loading && analytics && revenueData.length > 0 && (
           <div className="glass rounded-2xl p-6">
-            <h3 className="text-lg font-serif text-foreground mb-6">Revenue Distribution</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={revenueData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={(entry) => `${entry.name}: ₹${entry.value.toLocaleString()}`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {revenueData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-serif text-foreground">Revenue Distribution</h3>
+              <p className="text-sm text-muted-foreground">{dateRange.label}</p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={revenueData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                    label={({ name, value }) => `₹${value.toLocaleString()}`}
+                  >
+                    {revenueData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+              
+              <div className="flex flex-col justify-center space-y-4">
+                <div className="bg-[#B89D62]/10 rounded-xl p-4 border border-[#B89D62]/30">
+                  <p className="text-sm text-muted-foreground mb-1">Paid to Hotel</p>
+                  <p className="text-2xl font-medium text-[#B89D62]">₹{analytics.hotel_received.toLocaleString()}</p>
+                </div>
+                <div className="bg-[#88856A]/10 rounded-xl p-4 border border-[#88856A]/30">
+                  <p className="text-sm text-muted-foreground mb-1">Paid to Nirvaana</p>
+                  <p className="text-2xl font-medium text-[#88856A]">₹{analytics.nirvaana_received.toLocaleString()}</p>
+                </div>
+                <div className="bg-muted/30 rounded-xl p-4">
+                  <p className="text-sm text-muted-foreground mb-1">Total Revenue</p>
+                  <p className="text-2xl font-medium text-foreground">₹{analytics.total_sales.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* No Data State */}
+        {!loading && analytics && analytics.total_services === 0 && (
+          <div className="glass rounded-2xl p-12 text-center">
+            <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" strokeWidth={1.5} />
+            <p className="text-muted-foreground">No services found for {dateRange.label}</p>
+            <Button variant="outline" size="sm" className="mt-4" onClick={handleResetToToday}>
+              Reset to Today
+            </Button>
           </div>
         )}
 
@@ -453,21 +573,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                 </div>
                 <div>
                   <h3 className="text-lg font-medium text-foreground">Reports</h3>
-                  <p className="text-sm text-muted-foreground">Revenue & Analytics</p>
-                </div>
-              </div>
-            </div>
-          </Link>
-
-          <Link to="/admin/incentives">
-            <div className="glass rounded-2xl p-6 hover:shadow-float transition-all cursor-pointer" data-testid="incentives-nav">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
-                  <Award className="w-6 h-6 text-accent" strokeWidth={1.5} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium text-foreground">Incentives</h3>
-                  <p className="text-sm text-muted-foreground">Manage payouts</p>
+                  <p className="text-sm text-muted-foreground">Financial analytics</p>
                 </div>
               </div>
             </div>
@@ -486,6 +592,20 @@ const AdminDashboard = ({ user, onLogout }) => {
               </div>
             </div>
           </Link>
+
+          <Link to="/admin/incentives">
+            <div className="glass rounded-2xl p-6 hover:shadow-float transition-all cursor-pointer" data-testid="incentives-nav">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+                  <Award className="w-6 h-6 text-accent" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-foreground">Incentives</h3>
+                  <p className="text-sm text-muted-foreground">Manage payouts</p>
+                </div>
+              </div>
+            </div>
+          </Link>
         </div>
       </div>
 
@@ -498,6 +618,7 @@ const AdminDashboard = ({ user, onLogout }) => {
               {detailDialog.type === 'gst' && 'GST Details'}
               {detailDialog.type === 'customers' && 'Customer Details'}
               {detailDialog.type === 'services' && 'Service Details'}
+              <span className="text-sm font-normal text-muted-foreground ml-2">({dateRange.label})</span>
             </DialogTitle>
           </DialogHeader>
           
