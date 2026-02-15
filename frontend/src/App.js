@@ -13,6 +13,7 @@ import AdminServices from './pages/admin/Services';
 import AdminReports from './pages/admin/Reports';
 import AdminIncentives from './pages/admin/Incentives';
 import AdminExpenses from './pages/admin/Expenses';
+import AdminSettings from './pages/admin/Settings';
 import './App.css';
 
 function App() {
