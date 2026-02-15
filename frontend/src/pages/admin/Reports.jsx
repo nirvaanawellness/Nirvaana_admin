@@ -609,11 +609,13 @@ const AdminReports = ({ user, onLogout }) => {
   const downloadPnlReport = () => {
     const headers = ['Metric', 'Current Period', 'Cumulative (All Time)'];
     const rows = [
-      ['Gross Revenue', pnlReportData.period.grossRevenue.toFixed(2), pnlReportData.cumulative.grossRevenue.toFixed(2)],
-      ['Hotel Share', pnlReportData.period.hotelShare.toFixed(2), pnlReportData.cumulative.hotelShare.toFixed(2)],
-      ['Our Revenue', pnlReportData.period.ourRevenue.toFixed(2), pnlReportData.cumulative.ourRevenue.toFixed(2)],
+      ['Base Revenue (Excl. GST)', pnlReportData.period.baseRevenue.toFixed(2), pnlReportData.cumulative.baseRevenue.toFixed(2)],
+      ['GST Collected', pnlReportData.period.gstCollected.toFixed(2), pnlReportData.cumulative.gstCollected.toFixed(2)],
+      ['Gross Revenue (Incl. GST)', pnlReportData.period.grossRevenue.toFixed(2), pnlReportData.cumulative.grossRevenue.toFixed(2)],
+      ['Hotel Base Share', pnlReportData.period.hotelBaseShare.toFixed(2), pnlReportData.cumulative.hotelBaseShare.toFixed(2)],
+      ['Our Base Share', pnlReportData.period.ourBaseShare.toFixed(2), pnlReportData.cumulative.ourBaseShare.toFixed(2)],
       ['Expenses', pnlReportData.period.expenses.toFixed(2), pnlReportData.cumulative.expenses.toFixed(2)],
-      ['Net Profit/Loss', pnlReportData.period.profit.toFixed(2), pnlReportData.cumulative.profit.toFixed(2)]
+      ['Net Profit (Our Base Share - Expenses)', pnlReportData.period.profit.toFixed(2), pnlReportData.cumulative.profit.toFixed(2)]
     ];
     
     downloadCSV(headers, rows, 'profit-loss-report');
