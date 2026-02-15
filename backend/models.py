@@ -213,3 +213,23 @@ class ExpenseCreate(BaseModel):
     description: Optional[str] = None
     date: str
     therapist_id: Optional[str] = None
+
+# OTP Models for Password Reset
+class OTPRequest(BaseModel):
+    email: str
+
+class OTPVerify(BaseModel):
+    email: str
+    otp: str
+
+class PasswordChange(BaseModel):
+    email: str
+    otp: str
+    new_password: str
+
+class OTPRecord(BaseModel):
+    email: str
+    otp: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    expires_at: datetime
+    used: bool = False
