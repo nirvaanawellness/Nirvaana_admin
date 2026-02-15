@@ -411,6 +411,101 @@ async def get_my_attendance(current_user: dict = Depends(get_current_user)):
     
     return attendance_records
 
+@api_router.get("/attendance/admin/daily")
+async def get_daily_attendance(
+    date: Optional[str] = None,
+    property_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Get daily attendance log for admin - shows who signed in/out on a specific day"""
+    from bson import ObjectId
+    
+    # Default to today if no date provided
+    target_date = date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # Build query
+    query = {"date": target_date}
+    if property_id:
+        query["property_id"] = property_id
+    
+    attendance_records = await db.attendance.find(query, {"_id": 0}).to_list(1000)
+    
+    # Get active therapist info to enrich the records
+    active_therapists = await db.therapists.find(
+        {"status": {"$ne": "archived"}},
+        {"_id": 0, "user_id": 1, "full_name": 1, "assigned_property_id": 1}
+    ).to_list(1000)
+    
+    therapist_map = {t["user_id"]: t for t in active_therapists}
+    
+    # Enrich attendance records with therapist info
+    enriched_records = []
+    for record in attendance_records:
+        therapist_info = therapist_map.get(record["therapist_id"], {})
+        enriched_records.append({
+            **record,
+            "therapist_name": therapist_info.get("full_name", "Unknown"),
+            "assigned_property": therapist_info.get("assigned_property_id", "Unknown")
+        })
+    
+    # Also identify therapists who haven't checked in yet
+    checked_in_ids = {r["therapist_id"] for r in attendance_records}
+    not_checked_in = []
+    for therapist in active_therapists:
+        if property_id and therapist.get("assigned_property_id") != property_id:
+            continue
+        if therapist["user_id"] not in checked_in_ids:
+            not_checked_in.append({
+                "therapist_id": therapist["user_id"],
+                "therapist_name": therapist["full_name"],
+                "assigned_property": therapist.get("assigned_property_id", "Unknown"),
+                "status": "not_signed_in"
+            })
+    
+    return {
+        "date": target_date,
+        "checked_in": enriched_records,
+        "not_checked_in": not_checked_in,
+        "total_checked_in": len(enriched_records),
+        "total_not_checked_in": len(not_checked_in)
+    }
+
+@api_router.get("/attendance/admin/history/{therapist_id}")
+async def get_therapist_attendance_history(
+    therapist_id: str,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Get attendance history for a specific active therapist (admin view)"""
+    
+    # Verify therapist exists and is active
+    therapist = await db.therapists.find_one({"user_id": therapist_id})
+    if not therapist:
+        raise HTTPException(status_code=404, detail="Therapist not found")
+    
+    if therapist.get("status") == "archived":
+        raise HTTPException(status_code=400, detail="Cannot view attendance history for archived therapists")
+    
+    # Build query
+    query = {"therapist_id": therapist_id}
+    if date_from or date_to:
+        query["date"] = {}
+        if date_from:
+            query["date"]["$gte"] = date_from
+        if date_to:
+            query["date"]["$lte"] = date_to
+    
+    records = await db.attendance.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
+    
+    return {
+        "therapist_id": therapist_id,
+        "therapist_name": therapist.get("full_name", "Unknown"),
+        "assigned_property": therapist.get("assigned_property_id", "Unknown"),
+        "attendance_records": records,
+        "total_records": len(records)
+    }
+
 @api_router.post("/services")
 async def create_service_entry(service_data: ServiceEntryCreate, current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "therapist":
