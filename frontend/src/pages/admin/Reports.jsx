@@ -560,20 +560,35 @@ const AdminReports = ({ user, onLogout }) => {
     }
   };
 
-  // Download functions
+  // Download Sales Report with full GST breakdown
   const downloadSalesReport = () => {
-    const headers = ['Property', 'Hotel Share %', 'Gross Revenue', 'Hotel Expected', 'Hotel Received', 'Our Expected', 'Our Received', 'To Pay Hotel', 'To Pay Nirvaana'];
+    const headers = [
+      'Property', 'Share %', 
+      'Base Revenue', 'GST Collected', 'Gross Revenue',
+      'Hotel Base Expected', 'Hotel GST Liability', 'Hotel Total Expected', 'Hotel Received',
+      'Our Base Expected', 'Our GST Liability', 'Our Total Expected', 'Our Received',
+      'To Pay Hotel', 'To Pay Nirvaana'
+    ];
+    
     const rows = salesReportData.map(p => {
-      const toPayHotel = Math.max(0, p.hotel_expected - p.hotel_received);
-      const toPayNirvaana = Math.max(0, p.our_revenue - p.nirvaana_received);
+      // Settlement: Positive means they need to receive (other owes them)
+      const toPayHotel = p.hotel_settlement > 0 ? p.hotel_settlement : 0;
+      const toPayNirvaana = p.our_settlement > 0 ? p.our_settlement : 0;
+      
       return [
         p.property_name, 
         p.hotel_share_percent, 
+        p.base_revenue.toFixed(2),
+        p.gst_collected.toFixed(2),
         p.gross_revenue.toFixed(2),
-        p.hotel_expected.toFixed(2), 
-        p.hotel_received.toFixed(2), 
-        p.our_revenue.toFixed(2), 
-        p.nirvaana_received.toFixed(2),
+        p.hotel_base_expected.toFixed(2),
+        p.hotel_gst_liability.toFixed(2),
+        p.hotel_total_expected.toFixed(2),
+        p.hotel_received.toFixed(2),
+        p.our_base_expected.toFixed(2),
+        p.our_gst_liability.toFixed(2),
+        p.our_total_expected.toFixed(2),
+        p.our_received.toFixed(2),
         toPayHotel > 0 ? toPayHotel.toFixed(2) : 'NA',
         toPayNirvaana > 0 ? toPayNirvaana.toFixed(2) : 'NA'
       ];
