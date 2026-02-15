@@ -852,10 +852,10 @@ const AdminReports = ({ user, onLogout }) => {
           </div>
         )}
 
-        {/* Property Bar Chart with consistent data */}
+        {/* Property Bar Chart with GST-aware data */}
         {chartData.length > 0 && (
           <div className="glass rounded-2xl p-6">
-            <h3 className="text-lg font-serif text-foreground mb-4">Our Revenue vs Expenses by Property</h3>
+            <h3 className="text-lg font-serif text-foreground mb-4">Our Base Share vs Expenses by Property</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -866,7 +866,7 @@ const AdminReports = ({ user, onLogout }) => {
                   labelFormatter={(label) => `Property: ${label}`}
                 />
                 <Legend />
-                <Bar dataKey="ourRevenue" name="Our Revenue" fill="#B89D62" />
+                <Bar dataKey="ourBaseShare" name="Our Base Share" fill="#B89D62" />
                 <Bar dataKey="expenses" name="Expenses" fill="#ef4444" />
               </BarChart>
             </ResponsiveContainer>
