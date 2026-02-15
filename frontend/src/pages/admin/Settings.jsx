@@ -25,13 +25,18 @@ const AdminSettings = ({ user, onLogout }) => {
 
   const handleRequestOtp = async () => {
     if (!email) {
-      toast.error('Please enter your email');
+      toast.error('Please enter your username or email');
       return;
     }
     
     setLoading(true);
     try {
       const response = await axios.post(`${API}/auth/request-otp`, { email });
+      
+      // Update email to actual email returned from backend (for OTP verification)
+      if (response.data.email) {
+        setEmail(response.data.email);
+      }
       
       if (response.data.otp) {
         // Email failed, OTP returned in response (dev mode)
