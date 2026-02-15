@@ -757,7 +757,7 @@ const AdminReports = ({ user, onLogout }) => {
 
       {/* Sales Report Dialog */}
       <Dialog open={salesReportDialog} onOpenChange={setSalesReportDialog}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-serif text-xl">Sales Report</DialogTitle>
           </DialogHeader>
@@ -767,36 +767,80 @@ const AdminReports = ({ user, onLogout }) => {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2">Property</th>
-                      <th className="text-right py-2">Share %</th>
-                      <th className="text-right py-2">Gross Revenue</th>
-                      <th className="text-right py-2">Hotel Expected</th>
-                      <th className="text-right py-2">Hotel Received</th>
-                      <th className="text-right py-2">Hotel Outstanding</th>
-                      <th className="text-right py-2">Our Revenue</th>
-                      <th className="text-right py-2">Our Outstanding</th>
+                    <tr className="border-b bg-muted/30">
+                      <th className="text-left py-3 px-2">Property</th>
+                      <th className="text-right py-3 px-2">Share %</th>
+                      <th className="text-right py-3 px-2">Gross Revenue</th>
+                      <th className="text-right py-3 px-2">Hotel Expected</th>
+                      <th className="text-right py-3 px-2">Hotel Received</th>
+                      <th className="text-right py-3 px-2">Our Expected</th>
+                      <th className="text-right py-3 px-2">Our Received</th>
+                      <th className="text-right py-3 px-2 bg-amber-50">To Pay Hotel</th>
+                      <th className="text-right py-3 px-2 bg-primary/10">To Pay Nirvaana</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {salesReportData.map((p, i) => (
-                      <tr key={i} className="border-b">
-                        <td className="py-2">{p.property_name}</td>
-                        <td className="py-2 text-right">{p.hotel_share_percent}%</td>
-                        <td className="py-2 text-right">₹{p.gross_revenue.toLocaleString()}</td>
-                        <td className="py-2 text-right">₹{p.hotel_expected.toFixed(0)}</td>
-                        <td className="py-2 text-right">₹{p.hotel_received.toFixed(0)}</td>
-                        <td className={`py-2 text-right font-medium ${p.hotel_outstanding > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          ₹{Math.abs(p.hotel_outstanding).toFixed(0)}
-                        </td>
-                        <td className="py-2 text-right text-primary font-medium">₹{p.our_revenue.toFixed(0)}</td>
-                        <td className={`py-2 text-right font-medium ${p.our_outstanding > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          ₹{Math.abs(p.our_outstanding).toFixed(0)}
-                        </td>
-                      </tr>
-                    ))}
+                    {salesReportData.map((p, i) => {
+                      // Calculate what needs to be paid
+                      // If Hotel received less than expected, Nirvaana owes Hotel
+                      const toPayHotel = p.hotel_expected - p.hotel_received;
+                      // If Nirvaana received less than expected, Hotel owes Nirvaana
+                      const toPayNirvaana = p.our_revenue - p.nirvaana_received;
+                      
+                      return (
+                        <tr key={i} className="border-b hover:bg-muted/20">
+                          <td className="py-3 px-2 font-medium">{p.property_name}</td>
+                          <td className="py-3 px-2 text-right">{p.hotel_share_percent}%</td>
+                          <td className="py-3 px-2 text-right">₹{p.gross_revenue.toLocaleString()}</td>
+                          <td className="py-3 px-2 text-right">₹{p.hotel_expected.toFixed(0)}</td>
+                          <td className="py-3 px-2 text-right">₹{p.hotel_received.toFixed(0)}</td>
+                          <td className="py-3 px-2 text-right text-primary">₹{p.our_revenue.toFixed(0)}</td>
+                          <td className="py-3 px-2 text-right">₹{p.nirvaana_received.toFixed(0)}</td>
+                          <td className="py-3 px-2 text-right bg-amber-50/50 font-medium">
+                            {toPayHotel > 0 ? (
+                              <span className="text-amber-700">₹{toPayHotel.toFixed(0)}</span>
+                            ) : (
+                              <span className="text-muted-foreground">NA</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-2 text-right bg-primary/5 font-medium">
+                            {toPayNirvaana > 0 ? (
+                              <span className="text-primary">₹{toPayNirvaana.toFixed(0)}</span>
+                            ) : (
+                              <span className="text-muted-foreground">NA</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 bg-muted/30 font-medium">
+                      <td className="py-3 px-2">Total</td>
+                      <td className="py-3 px-2"></td>
+                      <td className="py-3 px-2 text-right">₹{salesReportData.reduce((sum, p) => sum + p.gross_revenue, 0).toLocaleString()}</td>
+                      <td className="py-3 px-2 text-right">₹{salesReportData.reduce((sum, p) => sum + p.hotel_expected, 0).toFixed(0)}</td>
+                      <td className="py-3 px-2 text-right">₹{salesReportData.reduce((sum, p) => sum + p.hotel_received, 0).toFixed(0)}</td>
+                      <td className="py-3 px-2 text-right text-primary">₹{salesReportData.reduce((sum, p) => sum + p.our_revenue, 0).toFixed(0)}</td>
+                      <td className="py-3 px-2 text-right">₹{salesReportData.reduce((sum, p) => sum + p.nirvaana_received, 0).toFixed(0)}</td>
+                      <td className="py-3 px-2 text-right bg-amber-50/50">
+                        <span className="text-amber-700">
+                          ₹{salesReportData.reduce((sum, p) => sum + Math.max(0, p.hotel_expected - p.hotel_received), 0).toFixed(0)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 text-right bg-primary/5">
+                        <span className="text-primary">
+                          ₹{salesReportData.reduce((sum, p) => sum + Math.max(0, p.our_revenue - p.nirvaana_received), 0).toFixed(0)}
+                        </span>
+                      </td>
+                    </tr>
+                  </tfoot>
                 </table>
+              </div>
+              
+              <div className="bg-muted/30 rounded-lg p-3 text-xs text-muted-foreground">
+                <p><strong>To Pay Hotel:</strong> Amount Nirvaana needs to pay to Hotel (when Hotel received less than expected)</p>
+                <p><strong>To Pay Nirvaana:</strong> Amount Hotel needs to pay to Nirvaana (when Nirvaana received less than expected)</p>
               </div>
               
               <DialogFooter>
