@@ -24,7 +24,7 @@ class EmailService:
         self.sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
         
         # Portal URL
-        self.portal_url = os.getenv("PORTAL_URL", "https://wellness-reporting.preview.emergentagent.com")
+        self.portal_url = os.getenv("PORTAL_URL", "https://wellness-ops-dev.preview.emergentagent.com")
         
     def generate_secure_password(self, length=10):
         """Generate a secure random password"""

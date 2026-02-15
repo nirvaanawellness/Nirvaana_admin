@@ -1,99 +1,101 @@
 <analysis>**original_problem_statement:**
 Build a secure, scalable, mobile-first internal operations management application for a spa operations company named Nirvaana Wellness. The system should function as a complete internal Spa Operations ERP, handling property and therapist management, attendance, sales tracking, GST automation, revenue sharing, incentives, monthly settlements, and automated WhatsApp feedback.
 
-**LATEST PRODUCT REQUIREMENTS (Reporting & Profit Calculation):**
-- **Core Logic:** Revenue sharing percentages must be applied to the **Base Amount (excluding GST)**, not the gross, GST-inclusive amount.
-- **Profit Formula:** Net Profit = Our Base Share – Expenses.
-- **Data Separation:** Reports must clearly distinguish between Base Revenue, GST Amount, and Gross Revenue.
-- **Settlement Logic:** Must be transparent and auditable, accounting for who collected the base amount and who collected the GST, then reconciling the difference based on contractual shares of the base amount.
-- **New Graphs:** A date-wise line graph showing revenue over the selected period, with red 'X' markers on dates with recorded expenses.
-- **UI Changes:** The Therapists filter must be removed from the Reports page.
-- **Sales Report Columns:** The report must be updated to show a detailed breakdown including Base Revenue, GST, Gross Revenue, Share %, Expected vs. Received amounts for both Hotel and Nirvaana (separating base and GST), and a final settlement amount (To Pay Hotel / To Pay Nirvaana).
+**LATEST PRODUCT REQUIREMENTS:**
+- **UI & Branding**: A shared header with a large logo and Nirvaana Wellness in golden letters should appear on all pages.
+- **Data Management (Archiving)**: Deleting a property or therapist should not remove them from the database. Instead, they should be moved to an archived state, remaining accessible for historical reporting but removed from active dropdowns. UI should show Active and Past (Archived) sections.
+- **Security**: Implement an OTP-based password change feature for the admin user. The OTP should be sent to the admin's registered email.
+- **Analytics & Forecasting**: Implement a full analytics dashboard, including a graph that forecasts next month's revenue using a weighted moving average or regression analysis.
+- **Attendance Tracking**: The admin must be able to see a daily log of therapist sign-ins and sign-outs to monitor punctuality. Historical attendance records for active therapists must be available.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application with a React frontend and FastAPI backend. It features role-based authentication (Admin, Therapist), management modules for properties and therapists, and a service entry form.
+A full-stack application with a React frontend and FastAPI backend. It features role-based authentication and management modules for properties and therapists.
 
-A comprehensive, interactive Admin Dashboard and Reports module has been built. Key features include:
-- **Admin Dashboard:** A month-scrolling timeline to view data for today, the current month-to-date, or any past month.
-- **Reports Page:** A dedicated page with advanced filters (Year, Month, Quarter, Property), summary cards (Gross Revenue, Expenses, Profit), a date-wise revenue line graph with expense markers, and a bar chart comparing properties.
-- **Downloadable Reports:** Dialogs for detailed Sales, Expense, and Profit & Loss reports with an Export to Excel feature.
-- **Dynamic Logic:** The system uses property-specific revenue sharing percentages for calculations.
+Key completed features include:
+- **GST-Accurate Reporting**: A comprehensive Reports module that correctly separates Base Revenue and GST for all financial calculations, including profit and partner settlements. The P&L report shows data for the selected period, current month, and all-time.
+- **Branding**: A new shared header component with the company logo and name has been created and applied to all main admin pages.
+- **Archiving System UI**: The backend models (, ) and API endpoints have been updated to support a  field ('active'/'archived'). The frontend pages for Properties and Therapists have been updated to display active and archived items separately.
+- **Admin Settings UI**: A new settings page has been created with the UI for initiating an OTP-based password change.
 
 **Last working item**:
-- **Last item agent was working**: The user provided a critical correction to the financial reporting logic. The current system incorrectly applies revenue sharing percentages to the gross revenue instead of the base revenue (excluding GST). The agent has acknowledged this requirement and was about to begin implementation.
-- **Status**: NOT STARTED
+- **Last item agent was working**: The agent was testing the newly created  backend endpoint after implementing a large batch of features including the shared header, archiving system, and OTP password change UI/backend scaffolding. The user interrupted with a new feature request for therapist attendance tracking.
+- **Status**: IN PROGRESS
 - **Agent Testing Done**: N
 - **Which testing method agent to use?**: both
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-- **Issue 1**: Implement GST-separated financial reporting logic (P0)
-- **Issue 2**: Finalize User Management (Admin password change with OTP, Therapist deactivation) (P1)
-- **Issue 3**: UI Fix - Remove icon from login page (P2)
-- **Issue 4**: Implement a functional SMS backup system for notifications (P3)
+- **Issue 1**: Complete implementation and testing of new features (P0)
+- **Issue 2**: Implement Therapist Attendance Tracking (P0)
 
 **Issues Detail:**
-- **Issue 1: Implement GST-separated financial reporting logic (P0)**
-    - **Attempted fixes**: None. The user just provided the new requirements.
+- **Issue 1: Complete implementation and testing of new features (P0)**
+    - **Attempted fixes**: The agent has created the UI, backend models, and API endpoints for archiving and OTP password change. A forecast endpoint has also been added. However, the end-to-end flows are not tested.
     - **Next debug checklist**:
-        1.  **Backend ():** Modify the reporting API endpoint ( or a new one) to separate  from  in all aggregations. The API response must provide a detailed breakdown for the frontend, including fields like , , , , etc., calculated per property.
-        2.  **Frontend ():**
-            - Overhaul the data fetching and state management to handle the new API structure.
-            - Rebuild the **Sales Report** dialog to display all required columns as per the latest user spec (Base Revenue, GST, Gross, Share %, Expected/Received breakdowns, Settlement Amount).
-            - Update the **P&L Report** dialog to calculate profit as .
-            - Correct the main summary cards on the Reports page to use the new GST-aware calculations.
-    - **Why fix this issue and what will be achieved with the fix?**: This is a critical accounting requirement. The current financial reports are inaccurate and not compliant with the business model, which can lead to incorrect settlements and tax issues.
+        1.  **OTP Password Change**: Test the  and  endpoints. Ensure emails are sent and passwords are changed correctly.
+        2.  **Archiving**: Test the  endpoints for  and  to confirm they set the  to 'archived' instead of deleting the record. Verify that archived items appear in the correct section of the UI.
+        3.  **Forecasting**: Test the  endpoint with sample data.
+    - **Why fix this issue and what will be achieved with the fix?**: To complete the user-requested features for improved security (OTP), data integrity (archiving), and branding.
+    - **Status**: IN PROGRESS
+    - **Is recurring issue?**: N
+    - **Should Test frontend/backend/both after fix?**: both
+    - **Blocked on other issue**: None
+
+- **Issue 2: Implement Therapist Attendance Tracking (P0)**
+    - **Attempted fixes**: None. This is a new requirement.
+    - **Next debug checklist**:
+        1.  **Backend**:
+            - Create a new MongoDB collection  with schema: .
+            - Create API endpoints for therapists to sign in and sign out.
+            - Create an API endpoint for admins to view daily and historical attendance records.
+        2.  **Frontend**:
+            - Add Sign In/Sign Out functionality to the therapist dashboard.
+            - Create a new admin page () to display the attendance logs with filters.
+    - **Why fix this issue and what will be achieved with the fix?**: Fulfills a core operational requirement for managing therapist punctuality and presence.
     - **Status**: NOT STARTED
     - **Is recurring issue?**: N
     - **Should Test frontend/backend/both after fix?**: both
-
-- **Issue 2: Finalize User Management (P1)**
-    - **Attempted fixes**: None.
-    - **Next debug checklist**:
-        1.  Implement an OTP-based change password feature for the admin user.
-        2.  Add a  field (e.g., 'active', 'inactive') to the  model to handle therapist deactivation properly.
-    - **Why fix this issue and what will be achieved with the fix?**: To enhance security and provide complete user lifecycle management.
-    - **Status**: NOT STARTED
-    - **Is recurring issue?**: N
-    - **Should Test frontend/backend/both after fix?**: both
-
-- **Issue 3: UI Fix - Remove icon from login page (P2)**
-    - **Attempted fixes**: The agent changed the text on the login page but forgot to remove the icon above it.
-    - **Next debug checklist**: Edit  and remove the JSX element for the icon.
-    - **Why fix this issue and what will be achieved with the fix?**: To match the user's specific UI request.
-    - **Status**: NOT STARTED
-    - **Is recurring issue?**: N
-    - **Should Test frontend/backend/both after fix?**: frontend
+    - **Blocked on other issue**: None
 
 **In progress Task List**:
-- **Task 1: Complete Reporting & Dashboard Module Overhaul**
-    - **Where to resume**: The entire reporting feature, primarily in  and the backend logic in , needs to be refactored to implement the GST-separated accounting logic.
-    - **What will be achieved with this?**: A financially accurate, auditable, and compliant reporting system that matches the user's business requirements.
+- **Task 1: Finalize New Features (Branding, Archive, OTP, Forecast)**
+    - **Where to resume**: The agent was about to test the  endpoint. The next step is to systematically test all the new backend endpoints (OTP, archive, forecast) and then integrate the forecast data into a new frontend analytics dashboard.
+    - **What will be achieved with this?**: A fully functional set of user-requested features, including a branded UI, a non-destructive archiving system, a secure admin password reset flow, and the backend for a new analytics dashboard.
     - **Status**: IN PROGRESS
     - **Should Test frontend/backend/both after fix?**: both
+    - **Blocked on something**: None
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks**:
-    - **(P1)** Implement a full analytics dashboard with more graphs (Sales Trends, Pie Charts).
+    - **(P0)** Build the full analytics dashboard UI to display the revenue forecast graph and other charts.
 - **Future Tasks**:
-    - **(P2)** Implement the automated monthly closing system to lock records.
+    - **(P1)** Implement the automated monthly closing system to lock records.
+    - **(P2)** Implement a functional SMS backup system for notifications.
     - **(P3)** Implement the optional feature to email therapist ID proofs/photos to .
 
 **Completed work in this session**
-- **Dashboard & Reporting Overhaul**:
-    - Created a new  with a month-scrolling timeline for date selection.
-    - Created a new  page with advanced filters, summary cards, and two new graphs (date-wise revenue line graph with expense markers, property-wise bar chart).
-    - Implemented three detailed, downloadable report dialogs for Sales, Expenses, and P&L.
-    - Implemented logic for dynamic, property-specific revenue sharing.
-    - Refined the Sales Report to show To Pay Hotel and To Pay Nirvaana columns.
-- **Expense Tracking (Partial)**: Added a basic  model, CRUD API endpoints, and a simple UI page ().
-- **UI Fix**: Changed the text on the  page to Nirvaana Wellness.
+- **GST-Accurate Financial Reporting**:
+    - Refactored  and  to correctly separate Base Revenue from GST in all calculations.
+    - Implemented a highly detailed Sales Report dialog with transparent settlement logic.
+    - Updated the P&L Report dialog to show three segments (Selection, Current Period, All-Time) and use the correct profit formula: .
+    - Successfully validated the new logic using the .
+- **UI Branding & Refactoring**:
+    - Created a shared header component  with the logo and brand name.
+    - Applied the new header across the , , , and  pages.
+- **Archiving System (Soft Delete)**:
+    - Updated  and  Pydantic models with a  field.
+    - Modified backend endpoints in  to archive items instead of deleting them.
+    - Revamped  and  to display Active and Archived sections.
+- **Admin Settings & OTP**:
+    - Created  for account management.
+    - Implemented the UI dialog for the OTP password change flow.
+    - Added  model and related API endpoints (, ) to .
+- **Dependencies**: Installed  for the forecasting feature.
 
 **Earlier issues found/mentioned but not fixed**
-- **Admin Password Change**: The request to add an OTP-based password change for the admin has not been addressed.
-- **Login Page Icon**: The user requested removing an icon from the login page, which was missed.
+- A functional SMS backup system for notifications is still pending.
 
 **Known issue recurrence from previous fork**
 - None.
@@ -105,79 +107,80 @@ A comprehensive, interactive Admin Dashboard and Reports module has been built. 
 - **Frontend**: React, Tailwind CSS, shadcn/ui, Recharts
 - **Backend**: FastAPI, Pydantic
 - **Database**: MongoDB
-- **Authentication**: JWT (JSON Web Tokens)
-- **Integrations**: Resend (Email API)
+- **Authentication**: JWT, OTP (new)
+- **Analytics**: Numpy (new)
 
 **key DB schema**
-- **User**: {email, hashed_password, role, full_name, phone_number, assigned_property, salary, etc.}
-- **Property**: {hotel_name, location, gst_number, revenue_share: float, etc.}
-- **Service**: {customer_name, therapy_name, base_price, gst_amount, total_amount, therapist_id, property_id, etc.}
-- **Expense**: {property_id, expense_type, description, amount, date}
+- **User**: {..., status: str}
+- **Property**: {..., status: str}
+- **Service**: {customer_name, base_price, gst_amount, total_amount, ...}
+- **Expense**: {property_id, amount, date, ...}
+- **OTP**: {email, otp_code, created_at, expires_at}
 
 **changes in tech stack**
-- None.
+- Added  to the backend for data analysis.
 
 **All files of reference**
-- : Contains all API logic. Needs a major update for reporting.
-- : The main reporting component. Needs a complete logic overhaul.
-- : The main dashboard component.
-- : Needs a minor UI fix (icon removal).
-- : Defines initial data, including property revenue share percentages.
+- : Contains new endpoints for archiving, OTP, and forecasting.
+- : New shared header component.
+- : New page for password change.
+- : Updated with active/archive logic.
+- : Updated with active/archive logic.
+- : Contains the correct GST-aware reporting logic.
+- : Contains the new route for the settings page.
 
 **Areas that need refactoring**:
--  is a monolithic component handling complex data fetching, filtering, state management, multiple graphs, and modal dialogs. It should be broken down into smaller, manageable components and custom hooks (e.g., , , ).
+-  is now over 1000 lines and contains logic for auth, CRUD for all models, reporting, OTP, and forecasting. It should be broken down into separate router files for better organization (e.g., , , ).
 
 **key api endpoints**
-- 
-- 
-- 
-- : Heavily used by the reporting module; its logic needs to be rewritten.
-- : New endpoints for managing expenses.
+- **New Endpoints**:
+    - 
+    - 
+    - 
+- **Modified Endpoints**:
+    - ,  (now supports  filter and soft delete)
+    - ,  (now supports  filter and soft delete)
 
 **Critical Info for New Agent**
-- **The current financial reporting logic is fundamentally wrong.** The immediate priority is to refactor the backend and frontend () to separate GST from the base revenue before applying revenue share percentages, as detailed in the latest user requirements.
-- Do not trust the financial figures currently displayed in the UI. They are calculated incorrectly.
-- The user has provided very specific, detailed requirements for the new accounting logic and report layout. Follow them precisely.
-- The  passed previously, but it was validating the *incorrect* logic. The tests themselves will need to be updated or rewritten once the new logic is in place.
+- You are in the middle of a large feature implementation. The previous agent has built the frontend UI and backend scaffolding for several features (branding, archiving, OTP, forecast) but has not completed end-to-end testing.
+- Your immediate priority (P0) is to complete and test these features, starting with the backend logic.
+- A new high-priority (P0) request for therapist attendance tracking has just been made. This needs to be planned and implemented from scratch.
+- The core financial reporting logic is now correct and has been tested. Do not change it unless explicitly requested.
 
 **documents and test reports created in this job**
--  (updated)
--  (Note: This report validated incorrect logic and is now outdated).
+- 
+-  (Validates the GST reporting fixes)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1. **User:** Provided detailed new requirements for a dashboard overhaul and a comprehensive reporting module (month timeline, filters, downloadable reports).
-2. **Agent:** Acknowledged and began implementing the new dashboard and reports page.
-3. **Agent:** Created the new  and  files.
-4. **Agent:** Took screenshots, noticed a bug in the month timeline, and fixed it.
-5. **Agent:** Fixed a runtime error on the  page.
-6. **Agent:** Verified the complete UI for the new Dashboard and Reports pages, including filters, graphs, and report dialogs.
-7. **Agent:** Ran the , which passed all tests, and prepared to finish.
-8. **User:** Intervened with a critical correction: the profit calculation is wrong. Provided a detailed spec on how to correctly calculate profit based on dynamic revenue shares and property-specific logic. Introduced new requirements for a date-wise line graph with expense markers and the removal of the Therapists filter.
-9. **Agent:** Acknowledged the critical update and rewrote  to implement the new profit formula and UI changes.
-10. **User:** Provided another detailed clarification for the Sales Report, specifying how settlement should work (To be Paid to Hotel vs. To be Paid to Nirvaana).
-11. **Agent:** Acknowledged and updated the Sales Report dialog and CSV export to match the new column structure.
-12. **User (LATEST):** Provided the final, critical business logic correction: **revenue share must be applied on the Base Amount (excluding GST)**. The current system applies it on the gross amount. This invalidates all current financial calculations and requires a major refactor.
+1.  **User**: Requested the P&L report be split into three segments: Selection-based, Current Period, and All-Time.
+2.  **Agent**: Implemented the three-segment P&L report. (COMPLETE)
+3.  **Agent**: Took a screenshot verifying the new P&L dialog. (COMPLETE)
+4.  **Agent**: Prepared to finish the task.
+5.  **User**: Provided a new list of requirements: large logo in a golden-lettered header, archiving system for properties/therapists, admin password change with OTP, and a forecast graph.
+6.  **Agent**: Acknowledged the new requirements and began analysis. (IN PROGRESS)
+7.  **Agent**: Proposed an implementation plan via .
+8.  **User**: Provided answers to the agent's clarifying questions (OTP via email, dark header, forecasting method choice).
+9.  **Agent**: Started implementing all features in a large batch. (IN PROGRESS)
+10. **User (LATEST)**: Confirmed a recharge and added a new requirement for therapist attendance tracking (sign-in/sign-out log). (NOT STARTED)
 
 **Project Health Check:**
-- **Broken**: The entire financial reporting and settlement logic is incorrect as it does not separate GST from base revenue before calculations.
-- **Mocked**: WhatsApp & SMS notifications remain non-functional placeholders.
+- **Broken**: End-to-end flows for OTP password change and archiving are not yet tested. The forecasting feature is backend-only and not connected to any UI.
+- **Mocked**: WhatsApp & SMS notifications are still placeholders.
 
 **3rd Party Integrations**
-- **Resend**: Used for transactional emails (therapist onboarding). Requires a User API Key.
-- **WhatsApp Business API** (Planned)
-- **SMS Gateway** (Planned)
+- **Resend**: Used for transactional emails (therapist onboarding, OTP). Requires a User API Key.
+- **Numpy**: Used for backend calculations (forecasting).
 
 **Testing status**
-- **Testing agent used after significant changes**: YES, but it validated incorrect business logic and is now outdated.
+- **Testing agent used after significant changes**: YES, for the GST reporting feature. The latest batch of features has not been tested.
 - **Troubleshoot agent used after agent stuck in loop**: NO
 - **Test files created**: []
-- **Known regressions**: The entire reporting feature, while visually complete, is logically incorrect and needs a full rework of its calculation engine.
+- **Known regressions**: None.
 
 **Credentials to test flow:**
 - **Admin**: Email: , Password: 
 - **Therapist**: Email: , Password: 
 
 **What agent forgot to execute**
-- The agent implemented multiple complex reporting features without first clarifying the core business logic around GST, leading to the current need for a major rework.
-- The agent forgot to remove the small icon on the  page as requested by the user.
-- The agent did not implement the OTP-based password change feature for the admin user.</analysis>
+- The agent batched a large number of features together without incremental testing, increasing the risk of integration bugs.
+- The agent proceeded with implementation before getting explicit user approval on the proposed plan from the  tool, although the user did answer clarifying questions.</analysis>
