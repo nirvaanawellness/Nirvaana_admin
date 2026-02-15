@@ -19,23 +19,159 @@ const API = `${BACKEND_URL}/api`;
 const AdminDashboard = ({ user, onLogout }) => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [properties, setProperties] = useState([]);
+  const [therapists, setTherapists] = useState([]);
+  const [allServices, setAllServices] = useState([]);
+  
+  // Filters
+  const [selectedProperties, setSelectedProperties] = useState([]);
+  const [selectedTherapists, setSelectedTherapists] = useState([]);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  
+  // Dialog for detailed view
+  const [detailDialog, setDetailDialog] = useState({ open: false, type: '', data: [] });
 
   useEffect(() => {
-    fetchAnalytics();
+    fetchInitialData();
   }, []);
 
-  const fetchAnalytics = async () => {
+  useEffect(() => {
+    if (properties.length > 0 || therapists.length > 0) {
+      fetchFilteredData();
+    }
+  }, [selectedProperties, selectedTherapists, dateFrom, dateTo]);
+
+  const fetchInitialData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API}/analytics/dashboard`, {
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      const [propsRes, therapistsRes] = await Promise.all([
+        axios.get(`${API}/properties`, { headers }),
+        axios.get(`${API}/therapists`, { headers })
+      ]);
+      
+      setProperties(propsRes.data);
+      setTherapists(therapistsRes.data);
+      fetchFilteredData();
+    } catch (error) {
+      toast.error('Failed to load data');
+      setLoading(false);
+    }
+  };
+
+  const fetchFilteredData = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams();
+      
+      if (selectedProperties.length > 0) {
+        selectedProperties.forEach(p => params.append('property_id', p));
+      }
+      if (selectedTherapists.length > 0) {
+        selectedTherapists.forEach(t => params.append('therapist_id', t));
+      }
+      if (dateFrom) params.append('date_from', dateFrom);
+      if (dateTo) params.append('date_to', dateTo);
+      
+      const servicesRes = await axios.get(`${API}/services?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setAnalytics(response.data);
+      
+      const services = servicesRes.data;
+      setAllServices(services);
+      
+      // Calculate analytics
+      const total_base_sales = services.reduce((sum, s) => sum + s.base_price, 0);
+      const total_gst = services.reduce((sum, s) => sum + s.gst_amount, 0);
+      const total_sales = services.reduce((sum, s) => sum + s.total_amount, 0);
+      const hotel_received = services.filter(s => s.payment_received_by === 'hotel').reduce((sum, s) => sum + s.total_amount, 0);
+      const nirvaana_received = services.filter(s => s.payment_received_by === 'nirvaana').reduce((sum, s) => sum + s.total_amount, 0);
+      const customer_count = new Set(services.map(s => s.customer_phone)).size;
+      
+      setAnalytics({
+        total_base_sales,
+        total_gst,
+        total_sales,
+        hotel_received,
+        nirvaana_received,
+        customer_count,
+        total_services: services.length
+      });
     } catch (error) {
       toast.error('Failed to load analytics');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResetFilters = () => {
+    setSelectedProperties([]);
+    setSelectedTherapists([]);
+    setDateFrom('');
+    setDateTo('');
+  };
+
+  const toggleProperty = (propertyId) => {
+    setSelectedProperties(prev => 
+      prev.includes(propertyId) 
+        ? prev.filter(p => p !== propertyId)
+        : [...prev, propertyId]
+    );
+  };
+
+  const toggleTherapist = (therapistId) => {
+    setSelectedTherapists(prev => 
+      prev.includes(therapistId) 
+        ? prev.filter(t => t !== therapistId)
+        : [...prev, therapistId]
+    );
+  };
+
+  const openDetailDialog = (type) => {
+    setDetailDialog({ open: true, type, data: allServices });
+  };
+
+  const downloadExcel = () => {
+    // Prepare CSV data
+    const headers = ['Date', 'Therapist Name', 'Customer Name', 'Customer Phone', 'Amount (No GST)', 'GST', 'Hotel Name', 'City', 'Therapy Name', 'Amount Paid To', 'Payment Mode'];
+    
+    const rows = allServices.map(service => {
+      const therapist = therapists.find(t => t.user_id === service.therapist_id);
+      const property = properties.find(p => p.hotel_name === service.property_id);
+      
+      return [
+        service.date,
+        therapist?.full_name || 'N/A',
+        service.customer_name,
+        service.customer_phone,
+        service.base_price,
+        service.gst_amount,
+        property?.hotel_name || service.property_id,
+        property?.location || 'N/A',
+        service.therapy_type,
+        service.payment_received_by === 'hotel' ? 'Hotel' : 'Nirvaana',
+        service.payment_mode || 'N/A'
+      ];
+    });
+    
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `nirvaana-sales-report-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('Excel report downloaded!');
   };
 
   const revenueData = analytics ? [
