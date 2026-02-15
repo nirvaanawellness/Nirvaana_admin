@@ -279,7 +279,7 @@ const AdminProperties = ({ user, onLogout }) => {
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
-                          onClick={() => handleDelete(property.hotel_name)}
+                          onClick={() => handleDelete(property.id)}
                           className="bg-destructive hover:bg-destructive/90"
                         >
                           Delete
