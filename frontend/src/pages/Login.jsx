@@ -47,11 +47,9 @@ const Login = ({ onLogin }) => {
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-background">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <img 
-              src="https://customer-assets.emergentagent.com/job_wellness-erp-core/artifacts/fny25i7a_Logo.png" 
-              alt="Nirvaana Wellness"
-              className="w-48 h-auto mx-auto mb-6"
-            />
+            <h1 className="text-4xl font-serif text-primary mb-6" style={{ fontWeight: 700, letterSpacing: '0.5px' }}>
+              Nirvaana Wellness
+            </h1>
             <p className="text-muted-foreground">Internal Operations Portal</p>
           </div>
 
