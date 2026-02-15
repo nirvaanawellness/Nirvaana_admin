@@ -137,18 +137,59 @@ async def update_property(property_id: str, property_data: PropertyCreate, curre
 
 @api_router.delete("/properties/{property_id}")
 async def delete_property(property_id: str, current_user: dict = Depends(get_current_admin)):
+    """Archive a property (soft delete). Historical data is preserved."""
     from bson import ObjectId
     
-    # Check if any therapists are assigned to this property
-    therapists_count = await db.therapists.count_documents({"assigned_property_id": property_id})
-    if therapists_count > 0:
-        raise HTTPException(status_code=400, detail=f"Cannot delete property. {therapists_count} therapists are still assigned to it.")
+    # Archive instead of delete - update status to archived
+    result = await db.properties.update_one(
+        {"_id": ObjectId(property_id)},
+        {
+            "$set": {
+                "status": "archived",
+                "active": False,
+                "archived_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
     
-    result = await db.properties.delete_one({"_id": ObjectId(property_id)})
-    if result.deleted_count == 0:
+    if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Property not found")
     
-    return {"message": "Property deleted successfully"}
+    # Also archive all therapists assigned to this property
+    property_data = await db.properties.find_one({"_id": ObjectId(property_id)})
+    if property_data:
+        await db.therapists.update_many(
+            {"assigned_property_id": property_data.get("hotel_name")},
+            {
+                "$set": {
+                    "status": "archived",
+                    "archived_at": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        )
+    
+    return {"message": "Property archived successfully. Historical data preserved."}
+
+@api_router.put("/properties/{property_id}/restore")
+async def restore_property(property_id: str, current_user: dict = Depends(get_current_admin)):
+    """Restore an archived property"""
+    from bson import ObjectId
+    
+    result = await db.properties.update_one(
+        {"_id": ObjectId(property_id)},
+        {
+            "$set": {
+                "status": "active",
+                "active": True
+            },
+            "$unset": {"archived_at": ""}
+        }
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Property not found")
+    
+    return {"message": "Property restored successfully"}
 
 @api_router.post("/therapists")
 async def create_therapist(therapist_data: TherapistCreate, current_user: dict = Depends(get_current_admin)):
