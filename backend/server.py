@@ -253,31 +253,86 @@ async def create_therapist(therapist_data: TherapistCreate, current_user: dict =
     return response
 
 @api_router.get("/therapists")
-async def get_therapists(current_user: dict = Depends(get_current_admin)):
-    therapists_cursor = db.therapists.find({})
+async def get_therapists(
+    include_archived: bool = Query(False, description="Include archived therapists"),
+    current_user: dict = Depends(get_current_admin)
+):
+    """Get therapists. By default only returns active therapists."""
+    query = {}
+    if not include_archived:
+        query["status"] = {"$ne": "archived"}
+    
+    therapists_cursor = db.therapists.find(query)
     therapists = []
     async for therapist in therapists_cursor:
         therapist_dict = {k: v for k, v in therapist.items() if k != "_id"}
+        # Ensure status field exists (for backward compatibility)
+        if "status" not in therapist_dict:
+            therapist_dict["status"] = "active"
         therapists.append(therapist_dict)
     return therapists
 
 @api_router.delete("/therapists/{therapist_id}")
 async def delete_therapist(therapist_id: str, current_user: dict = Depends(get_current_admin)):
-    """Delete therapist and their user account"""
+    """Archive a therapist (soft delete). Historical data is preserved."""
     
     # Find therapist
     therapist = await db.therapists.find_one({"user_id": therapist_id})
     if not therapist:
         raise HTTPException(status_code=404, detail="Therapist not found")
     
-    # Delete from therapists collection
-    await db.therapists.delete_one({"user_id": therapist_id})
+    # Archive therapist instead of delete
+    await db.therapists.update_one(
+        {"user_id": therapist_id},
+        {
+            "$set": {
+                "status": "archived",
+                "archived_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
     
-    # Delete user account
+    # Also archive the user account (prevent login)
     from bson import ObjectId
-    await db.users.delete_one({"_id": ObjectId(therapist_id)})
+    await db.users.update_one(
+        {"_id": ObjectId(therapist_id)},
+        {
+            "$set": {
+                "status": "archived",
+                "archived_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
     
-    return {"message": "Therapist removed successfully"}
+    return {"message": "Therapist archived successfully. Historical data preserved."}
+
+@api_router.put("/therapists/{therapist_id}/restore")
+async def restore_therapist(therapist_id: str, current_user: dict = Depends(get_current_admin)):
+    """Restore an archived therapist"""
+    from bson import ObjectId
+    
+    # Restore therapist
+    result = await db.therapists.update_one(
+        {"user_id": therapist_id},
+        {
+            "$set": {"status": "active"},
+            "$unset": {"archived_at": ""}
+        }
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Therapist not found")
+    
+    # Restore user account
+    await db.users.update_one(
+        {"_id": ObjectId(therapist_id)},
+        {
+            "$set": {"status": "active"},
+            "$unset": {"archived_at": ""}
+        }
+    )
+    
+    return {"message": "Therapist restored successfully"}
 
 @api_router.get("/therapists/me")
 async def get_therapist_profile(current_user: dict = Depends(get_current_user)):
