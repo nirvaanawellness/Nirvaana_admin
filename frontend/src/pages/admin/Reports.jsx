@@ -696,11 +696,6 @@ const AdminReports = ({ user, onLogout }) => {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader user={user} onLogout={onLogout} showBack={true} backTo="/admin" title="Reports" rightContent={headerRightContent} />
-            <RotateCcw className="w-4 h-4 mr-2" strokeWidth={1.5} />
-            Reset
-          </Button>
-        </div>
-      </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         {/* Filters - Removed Therapists */}
