@@ -481,7 +481,12 @@ const AdminReports = ({ user, onLogout }) => {
     setExpenseReportDialog(true);
   };
 
-  // Generate P&L Report with correct formula
+  /**
+   * GENERATE P&L REPORT WITH CORRECT GST-AWARE FORMULA
+   * 
+   * Profit = Our BASE Share - Expenses
+   * GST is NOT included in profit calculation
+   */
   const generatePnlReport = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -496,58 +501,55 @@ const AdminReports = ({ user, onLogout }) => {
       const allServices = allServicesRes.data;
       const allExpenses = allExpensesRes.data;
       
-      // Calculate cumulative using correct property-wise logic
+      // Calculate cumulative using GST-aware logic
       const cumulativeByProperty = {};
       
       allServices.forEach(service => {
         const propId = service.property_id;
         if (!cumulativeByProperty[propId]) {
-          const hotelSharePercent = getPropertyShare(propId);
-          cumulativeByProperty[propId] = {
-            grossRevenue: 0,
-            hotelSharePercent,
-            expenses: 0
-          };
+          cumulativeByProperty[propId] = [];
         }
-        cumulativeByProperty[propId].grossRevenue += service.base_price;
+        cumulativeByProperty[propId].push(service);
       });
       
-      allExpenses.forEach(exp => {
-        if (cumulativeByProperty[exp.property_id]) {
-          cumulativeByProperty[exp.property_id].expenses += exp.amount;
-        }
-      });
+      let cumulativeBaseRevenue = 0;
+      let cumulativeGstCollected = 0;
+      let cumulativeGrossRevenue = 0;
+      let cumulativeHotelBaseShare = 0;
+      let cumulativeNirvaanaBaseShare = 0;
+      let cumulativeExpenses = allExpenses.reduce((sum, e) => sum + e.amount, 0);
       
-      let cumulativeGross = 0;
-      let cumulativeHotelShare = 0;
-      let cumulativeOurRevenue = 0;
-      let cumulativeExpenses = 0;
-      let cumulativeProfit = 0;
-      
-      Object.values(cumulativeByProperty).forEach(stat => {
-        const hotelShare = stat.grossRevenue * (stat.hotelSharePercent / 100);
-        const ourRevenue = stat.grossRevenue - hotelShare;
-        const profit = ourRevenue - stat.expenses;
+      Object.entries(cumulativeByProperty).forEach(([propId, propServices]) => {
+        const hotelSharePercent = getPropertyShare(propId);
+        const settlement = calculateGSTAwareSettlement(propServices, hotelSharePercent);
         
-        cumulativeGross += stat.grossRevenue;
-        cumulativeHotelShare += hotelShare;
-        cumulativeOurRevenue += ourRevenue;
-        cumulativeExpenses += stat.expenses;
-        cumulativeProfit += profit;
+        cumulativeBaseRevenue += settlement.baseRevenue;
+        cumulativeGstCollected += settlement.gstCollected;
+        cumulativeGrossRevenue += settlement.grossRevenue;
+        cumulativeHotelBaseShare += settlement.hotelBaseShare;
+        cumulativeNirvaanaBaseShare += settlement.nirvaanaBaseShare;
       });
+      
+      // Profit = Our Base Share - Expenses (GST excluded)
+      const cumulativeProfit = cumulativeNirvaanaBaseShare - cumulativeExpenses;
+      const periodProfit = summary.nirvaanaBaseShare - summary.totalExpenses;
       
       setPnlReportData({
         period: {
+          baseRevenue: summary.baseRevenue,
+          gstCollected: summary.gstCollected,
           grossRevenue: summary.grossRevenue,
-          hotelShare: summary.hotelShare,
-          ourRevenue: summary.ourRevenue,
+          hotelBaseShare: summary.hotelBaseShare,
+          ourBaseShare: summary.nirvaanaBaseShare,
           expenses: summary.totalExpenses,
-          profit: summary.netProfit
+          profit: periodProfit
         },
         cumulative: {
-          grossRevenue: cumulativeGross,
-          hotelShare: cumulativeHotelShare,
-          ourRevenue: cumulativeOurRevenue,
+          baseRevenue: cumulativeBaseRevenue,
+          gstCollected: cumulativeGstCollected,
+          grossRevenue: cumulativeGrossRevenue,
+          hotelBaseShare: cumulativeHotelBaseShare,
+          ourBaseShare: cumulativeNirvaanaBaseShare,
           expenses: cumulativeExpenses,
           profit: cumulativeProfit
         }
