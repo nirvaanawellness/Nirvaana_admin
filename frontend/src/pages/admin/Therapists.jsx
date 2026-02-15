@@ -300,6 +300,40 @@ const AdminTherapists = ({ user, onLogout }) => {
                     </div>
                   )}
                 </div>
+                
+                <div className="mt-4 pt-4 border-t border-border/50 flex justify-end">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        data-testid={`delete-therapist-${index}`}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" strokeWidth={1.5} />
+                        Remove
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Remove Therapist</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to remove "{therapist.full_name}"? 
+                          They will no longer be able to login to the system. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDelete(therapist.user_id)}
+                          className="bg-destructive hover:bg-destructive/90"
+                        >
+                          Remove
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             ))
           )}
