@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { 
   ArrowLeft, FileText, Building2, DollarSign, TrendingUp, TrendingDown,
   Download, RotateCcw, Receipt, PieChart as PieChartIcon,
-  ChevronRight, X as XIcon
+  ChevronRight, X as XIcon, Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -44,6 +44,83 @@ const ExpenseMarker = (props) => {
       <line x1={cx + 6} y1={cy - 6} x2={cx - 6} y2={cy + 6} stroke="#ef4444" strokeWidth={3} />
     </g>
   );
+};
+
+/**
+ * GST-AWARE CALCULATION HELPER
+ * 
+ * CRITICAL BUSINESS LOGIC:
+ * - Revenue share % is applied ONLY on Base Amount (excluding GST)
+ * - GST is settled proportionately based on who collected it
+ * - Profit = Our Base Share - Expenses (GST excluded from profit)
+ * 
+ * Settlement Logic:
+ * 1. Calculate each party's expected BASE share from total base revenue
+ * 2. Calculate each party's GST liability based on their base share
+ * 3. Compare expected (base + GST) with actual collected (gross)
+ * 4. Settlement = Expected Total - Actually Collected
+ */
+const calculateGSTAwareSettlement = (services, hotelSharePercent) => {
+  // Step 1: Aggregate totals
+  const totals = services.reduce((acc, s) => {
+    acc.baseRevenue += s.base_price;
+    acc.gstCollected += s.gst_amount;
+    acc.grossRevenue += s.total_amount;
+    
+    // Track what each party actually collected (gross amounts)
+    if (s.payment_received_by === 'hotel') {
+      acc.hotelCollectedGross += s.total_amount;
+    } else {
+      acc.nirvaanaCollectedGross += s.total_amount;
+    }
+    return acc;
+  }, { 
+    baseRevenue: 0, 
+    gstCollected: 0, 
+    grossRevenue: 0, 
+    hotelCollectedGross: 0, 
+    nirvaanaCollectedGross: 0 
+  });
+  
+  // Step 2: Calculate expected BASE shares (share % applied to BASE only)
+  const hotelBaseShare = totals.baseRevenue * (hotelSharePercent / 100);
+  const nirvaanaBaseShare = totals.baseRevenue * (1 - hotelSharePercent / 100);
+  
+  // Step 3: Calculate GST liability proportionate to base share
+  // Each party's GST liability = Their Base Share × GST Rate (18%)
+  const hotelGSTLiability = hotelBaseShare * 0.18;
+  const nirvaanaGSTLiability = nirvaanaBaseShare * 0.18;
+  
+  // Step 4: Calculate expected TOTAL (Base + GST) for each party
+  const hotelExpectedTotal = hotelBaseShare + hotelGSTLiability;
+  const nirvaanaExpectedTotal = nirvaanaBaseShare + nirvaanaGSTLiability;
+  
+  // Step 5: Calculate settlement (Expected - Actually Collected)
+  // Positive = They need to receive more (other party owes them)
+  // Negative = They collected extra (they owe the other party)
+  const hotelSettlement = hotelExpectedTotal - totals.hotelCollectedGross;
+  const nirvaanaSettlement = nirvaanaExpectedTotal - totals.nirvaanaCollectedGross;
+  
+  return {
+    // Base amounts
+    baseRevenue: totals.baseRevenue,
+    gstCollected: totals.gstCollected,
+    grossRevenue: totals.grossRevenue,
+    
+    // Hotel breakdown
+    hotelBaseShare,
+    hotelGSTLiability,
+    hotelExpectedTotal,
+    hotelCollectedGross: totals.hotelCollectedGross,
+    hotelSettlement, // Positive = Nirvaana owes Hotel
+    
+    // Nirvaana breakdown
+    nirvaanaBaseShare,
+    nirvaanaGSTLiability,
+    nirvaanaExpectedTotal,
+    nirvaanaCollectedGross: totals.nirvaanaCollectedGross,
+    nirvaanaSettlement // Positive = Hotel owes Nirvaana
+  };
 };
 
 const AdminReports = ({ user, onLogout }) => {
