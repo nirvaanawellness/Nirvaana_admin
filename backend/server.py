@@ -234,6 +234,9 @@ async def create_service_entry(service_data: ServiceEntryCreate, current_user: d
     if not therapist:
         raise HTTPException(status_code=404, detail="Therapist not found")
     
+    # Get property details for WhatsApp message
+    property_name = therapist["assigned_property_id"]
+    
     gst_amount = round(service_data.base_price * 0.18, 2)
     total_amount = round(service_data.base_price + gst_amount, 2)
     
@@ -248,16 +251,46 @@ async def create_service_entry(service_data: ServiceEntryCreate, current_user: d
         "time": now.strftime("%H:%M:%S"),
         "locked": True,
         "whatsapp_sent": False,
+        "whatsapp_status": "pending",
         "created_at": now.isoformat()
     })
     
     result = await db.services.insert_one(service_dict)
+    service_id = str(result.inserted_id)
+    
+    # Send WhatsApp feedback message
+    try:
+        whatsapp_result = await whatsapp_service.send_feedback_message(
+            customer_phone=service_data.customer_phone,
+            customer_name=service_data.customer_name,
+            therapy_type=service_data.therapy_type,
+            property_name=property_name
+        )
+        
+        # Update service entry with WhatsApp status
+        await db.services.update_one(
+            {"_id": result.inserted_id},
+            {
+                "$set": {
+                    "whatsapp_sent": whatsapp_result["success"],
+                    "whatsapp_status": whatsapp_result["status"],
+                    "whatsapp_message_id": whatsapp_result.get("message_id")
+                }
+            }
+        )
+        
+        logger.info(f"WhatsApp message status for service {service_id}: {whatsapp_result['status']}")
+        
+    except Exception as e:
+        logger.error(f"Failed to send WhatsApp for service {service_id}: {str(e)}")
+        # Don't fail the service entry if WhatsApp fails
     
     return {
         "message": "Service entry created successfully",
-        "service_id": str(result.inserted_id),
+        "service_id": service_id,
         "gst_amount": gst_amount,
-        "total_amount": total_amount
+        "total_amount": total_amount,
+        "whatsapp_note": "Feedback message will be sent if WhatsApp is configured"
     }
 
 @api_router.get("/services/my-services")
