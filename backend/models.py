@@ -82,7 +82,7 @@ class TherapistCreate(BaseModel):
     full_name: str
     phone: str
     email: str
-    password: str
+    password: Optional[str] = None  # Optional - will be auto-generated if not provided
     experience_years: float
     salary_expectation: Optional[float] = None
     address: Optional[str] = None
