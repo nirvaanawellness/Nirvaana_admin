@@ -21,6 +21,7 @@ from auth import (
     get_current_user, get_current_admin, security
 )
 from whatsapp_service import whatsapp_service
+from email_service import email_service
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
