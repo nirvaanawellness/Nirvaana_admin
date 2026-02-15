@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -28,6 +28,7 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [selectedTherapists, setSelectedTherapists] = useState([]);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   
   // Dialog for detailed view
   const [detailDialog, setDetailDialog] = useState({ open: false, type: '', data: [] });
@@ -140,7 +141,7 @@ const AdminDashboard = ({ user, onLogout }) => {
     
     const rows = allServices.map(service => {
       const therapist = therapists.find(t => t.user_id === service.therapist_id);
-      const property = properties.find(p => p.hotel_name === service.property_id);
+      const property = properties.find(p => p.hotel_name === service.property_id || p.id === service.property_id);
       
       return [
         service.date,
@@ -179,6 +180,8 @@ const AdminDashboard = ({ user, onLogout }) => {
     { name: 'Nirvaana', value: analytics.nirvaana_received, color: '#88856A' }
   ] : [];
 
+  const hasActiveFilters = selectedProperties.length > 0 || selectedTherapists.length > 0 || dateFrom || dateTo;
+
   return (
     <div className="min-h-screen bg-background">
       <div className="bg-white/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-10">
@@ -188,10 +191,34 @@ const AdminDashboard = ({ user, onLogout }) => {
             alt="Nirvaana Wellness"
             className="h-12 w-auto"
           />
-          <Button variant="outline" size="sm" onClick={onLogout} data-testid="logout-button">
-            <LogOut className="w-4 h-4 mr-2" strokeWidth={1.5} />
-            Logout
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowFilters(!showFilters)}
+              data-testid="toggle-filters-button"
+            >
+              <Filter className="w-4 h-4 mr-2" strokeWidth={1.5} />
+              Filters
+              {hasActiveFilters && <span className="ml-2 bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                {(selectedProperties.length || 0) + (selectedTherapists.length || 0) + (dateFrom ? 1 : 0) + (dateTo ? 1 : 0)}
+              </span>}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={downloadExcel}
+              disabled={allServices.length === 0}
+              data-testid="download-excel-button"
+            >
+              <Download className="w-4 h-4 mr-2" strokeWidth={1.5} />
+              Excel
+            </Button>
+            <Button variant="outline" size="sm" onClick={onLogout} data-testid="logout-button">
+              <LogOut className="w-4 h-4 mr-2" strokeWidth={1.5} />
+              Logout
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -201,43 +228,154 @@ const AdminDashboard = ({ user, onLogout }) => {
           <p className="text-sm text-muted-foreground">Admin Portal - Operations Management</p>
         </div>
 
+        {/* Filters Panel */}
+        {showFilters && (
+          <div className="glass rounded-2xl p-6" data-testid="filters-panel">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-serif text-foreground">Filters</h3>
+              <div className="flex gap-2">
+                {hasActiveFilters && (
+                  <Button variant="outline" size="sm" onClick={handleResetFilters} data-testid="reset-filters-button">
+                    <X className="w-4 h-4 mr-2" strokeWidth={1.5} />
+                    Reset All
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)}>
+                  <X className="w-4 h-4" strokeWidth={1.5} />
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Property Filter */}
+              <div>
+                <Label className="mb-2 block">Properties</Label>
+                <div className="space-y-2 max-h-48 overflow-y-auto border border-border rounded-lg p-3">
+                  {properties.map((property) => (
+                    <div key={property.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`property-${property.id}`}
+                        checked={selectedProperties.includes(property.hotel_name)}
+                        onCheckedChange={() => toggleProperty(property.hotel_name)}
+                      />
+                      <label
+                        htmlFor={`property-${property.id}`}
+                        className="text-sm cursor-pointer"
+                      >
+                        {property.hotel_name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Therapist Filter */}
+              <div>
+                <Label className="mb-2 block">Therapists</Label>
+                <div className="space-y-2 max-h-48 overflow-y-auto border border-border rounded-lg p-3">
+                  {therapists.map((therapist) => (
+                    <div key={therapist.user_id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`therapist-${therapist.user_id}`}
+                        checked={selectedTherapists.includes(therapist.user_id)}
+                        onCheckedChange={() => toggleTherapist(therapist.user_id)}
+                      />
+                      <label
+                        htmlFor={`therapist-${therapist.user_id}`}
+                        className="text-sm cursor-pointer"
+                      >
+                        {therapist.full_name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Date Range */}
+              <div>
+                <Label htmlFor="date-from" className="mb-2 block">From Date</Label>
+                <Input
+                  id="date-from"
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  data-testid="date-from-input"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="date-to" className="mb-2 block">To Date</Label>
+                <Input
+                  id="date-to"
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  data-testid="date-to-input"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Clickable Stat Cards */}
         {!loading && analytics && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="glass rounded-2xl p-6" data-testid="total-sales-card">
+            <div 
+              className="glass rounded-2xl p-6 cursor-pointer hover:shadow-float transition-all" 
+              onClick={() => openDetailDialog('sales')}
+              data-testid="total-sales-card"
+            >
               <div className="flex items-center gap-3 mb-2">
                 <DollarSign className="w-6 h-6 text-primary" strokeWidth={1.5} />
                 <p className="text-sm text-muted-foreground">Total Sales</p>
               </div>
               <p className="text-3xl font-medium text-foreground">₹{analytics.total_sales.toLocaleString()}</p>
               <p className="text-xs text-muted-foreground mt-1">Base: ₹{analytics.total_base_sales.toLocaleString()}</p>
+              <p className="text-xs text-primary mt-2">Click for details →</p>
             </div>
 
-            <div className="glass rounded-2xl p-6">
+            <div 
+              className="glass rounded-2xl p-6 cursor-pointer hover:shadow-float transition-all"
+              onClick={() => openDetailDialog('gst')}
+              data-testid="gst-card"
+            >
               <div className="flex items-center gap-3 mb-2">
                 <TrendingUp className="w-6 h-6 text-accent" strokeWidth={1.5} />
                 <p className="text-sm text-muted-foreground">GST Collected</p>
               </div>
               <p className="text-3xl font-medium text-foreground">₹{analytics.total_gst.toLocaleString()}</p>
+              <p className="text-xs text-primary mt-2">Click for details →</p>
             </div>
 
-            <div className="glass rounded-2xl p-6">
+            <div 
+              className="glass rounded-2xl p-6 cursor-pointer hover:shadow-float transition-all"
+              onClick={() => openDetailDialog('customers')}
+              data-testid="customers-card"
+            >
               <div className="flex items-center gap-3 mb-2">
                 <UserCheck className="w-6 h-6 text-primary" strokeWidth={1.5} />
                 <p className="text-sm text-muted-foreground">Customers</p>
               </div>
               <p className="text-3xl font-medium text-foreground">{analytics.customer_count}</p>
+              <p className="text-xs text-primary mt-2">Click for details →</p>
             </div>
 
-            <div className="glass rounded-2xl p-6">
+            <div 
+              className="glass rounded-2xl p-6 cursor-pointer hover:shadow-float transition-all"
+              onClick={() => openDetailDialog('services')}
+              data-testid="services-card"
+            >
               <div className="flex items-center gap-3 mb-2">
                 <Package className="w-6 h-6 text-accent" strokeWidth={1.5} />
                 <p className="text-sm text-muted-foreground">Total Services</p>
               </div>
               <p className="text-3xl font-medium text-foreground">{analytics.total_services}</p>
+              <p className="text-xs text-primary mt-2">Click for details →</p>
             </div>
           </div>
         )}
 
+        {/* Revenue Chart */}
         {!loading && analytics && revenueData.length > 0 && (
           <div className="glass rounded-2xl p-6">
             <h3 className="text-lg font-serif text-foreground mb-6">Revenue Distribution</h3>
@@ -263,6 +401,7 @@ const AdminDashboard = ({ user, onLogout }) => {
           </div>
         )}
 
+        {/* Navigation Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Link to="/admin/properties">
             <div className="glass rounded-2xl p-6 hover:shadow-float transition-all cursor-pointer" data-testid="properties-nav">
@@ -335,6 +474,62 @@ const AdminDashboard = ({ user, onLogout }) => {
           </Link>
         </div>
       </div>
+
+      {/* Detail Dialog */}
+      <Dialog open={detailDialog.open} onOpenChange={(open) => setDetailDialog({ ...detailDialog, open })}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl">
+              {detailDialog.type === 'sales' && 'Sales Details'}
+              {detailDialog.type === 'gst' && 'GST Details'}
+              {detailDialog.type === 'customers' && 'Customer Details'}
+              {detailDialog.type === 'services' && 'Service Details'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-2 px-2">Date</th>
+                    <th className="text-left py-2 px-2">Therapist</th>
+                    <th className="text-left py-2 px-2">Customer</th>
+                    <th className="text-left py-2 px-2">Phone</th>
+                    <th className="text-right py-2 px-2">Amount</th>
+                    <th className="text-right py-2 px-2">GST</th>
+                    <th className="text-left py-2 px-2">Hotel</th>
+                    <th className="text-left py-2 px-2">Therapy</th>
+                    <th className="text-left py-2 px-2">Paid To</th>
+                    <th className="text-left py-2 px-2">Mode</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {detailDialog.data.map((service, idx) => {
+                    const therapist = therapists.find(t => t.user_id === service.therapist_id);
+                    const property = properties.find(p => p.hotel_name === service.property_id || p.id === service.property_id);
+                    
+                    return (
+                      <tr key={idx} className="border-b border-border/50 hover:bg-muted/30">
+                        <td className="py-2 px-2">{service.date}</td>
+                        <td className="py-2 px-2">{therapist?.full_name || 'N/A'}</td>
+                        <td className="py-2 px-2">{service.customer_name}</td>
+                        <td className="py-2 px-2">{service.customer_phone}</td>
+                        <td className="py-2 px-2 text-right">₹{service.base_price}</td>
+                        <td className="py-2 px-2 text-right">₹{service.gst_amount}</td>
+                        <td className="py-2 px-2">{property?.hotel_name || service.property_id}</td>
+                        <td className="py-2 px-2">{service.therapy_type}</td>
+                        <td className="py-2 px-2">{service.payment_received_by === 'hotel' ? 'Hotel' : 'Nirvaana'}</td>
+                        <td className="py-2 px-2">{service.payment_mode || 'N/A'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
