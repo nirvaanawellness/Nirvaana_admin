@@ -297,6 +297,95 @@ A Premium Spa Brand by Sunrise Wellness
                 "message": str(e)
             }
 
+    async def send_otp_email(self, email: str, otp: str, user_name: str) -> dict:
+        """Send OTP email for password reset"""
+        
+        if not self.enabled:
+            logger.info("Email service is disabled. OTP not sent via email.")
+            return {"success": False, "message": "Email service disabled"}
+        
+        subject = "Nirvaana Wellness - Password Reset OTP"
+        
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: 'Arial', sans-serif; line-height: 1.6; color: #2C2420; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #2C2420 0%, #B89D62 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .logo {{ font-size: 28px; font-weight: bold; margin-bottom: 10px; }}
+        .content {{ background: #F9F8F6; padding: 30px; border-radius: 0 0 10px 10px; }}
+        .otp-box {{ background: white; padding: 30px; text-align: center; margin: 20px 0; border-radius: 10px; border: 2px dashed #B89D62; }}
+        .otp {{ font-size: 36px; font-weight: bold; color: #B89D62; letter-spacing: 8px; }}
+        .footer {{ text-align: center; margin-top: 20px; color: #6B5E55; font-size: 12px; }}
+        .warning {{ background: #FFF3CD; padding: 15px; border-radius: 5px; margin: 20px 0; color: #856404; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">NIRVAANA WELLNESS</div>
+            <p>Password Reset Request</p>
+        </div>
+        
+        <div class="content">
+            <h2>Hello {user_name},</h2>
+            
+            <p>You have requested to reset your password for the Nirvaana Wellness Admin Portal.</p>
+            
+            <p>Your One-Time Password (OTP) is:</p>
+            
+            <div class="otp-box">
+                <div class="otp">{otp}</div>
+                <p style="margin-top: 15px; color: #6B5E55;">Valid for 10 minutes</p>
+            </div>
+            
+            <div class="warning">
+                ⚠️ <strong>Security Notice:</strong> Never share this OTP with anyone. Nirvaana Wellness staff will never ask for your OTP.
+            </div>
+            
+            <p>If you did not request this password reset, please ignore this email or contact support immediately.</p>
+            
+            <p><strong>Best regards,</strong><br>
+            Team Nirvaana Wellness</p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated email. Please do not reply.</p>
+            <p>© 2026 Nirvaana Wellness. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+        
+        text_content = f"""
+Nirvaana Wellness - Password Reset OTP
+
+Hello {user_name},
+
+You have requested to reset your password.
+
+Your OTP is: {otp}
+
+This OTP is valid for 10 minutes.
+
+WARNING: Never share this OTP with anyone.
+
+If you did not request this, please ignore this email.
+
+Best regards,
+Team Nirvaana Wellness
+"""
+        
+        if self.provider == "resend":
+            return await self._send_via_resend(email, subject, html_content, text_content)
+        elif self.provider == "sendgrid":
+            return await self._send_via_sendgrid(email, subject, html_content, text_content)
+        else:
+            return {"success": False, "message": f"Unknown provider: {self.provider}"}
+
 
 # Global instance
 email_service = EmailService()
