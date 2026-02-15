@@ -112,6 +112,7 @@ async def create_property(property_data: PropertyCreate, current_user: dict = De
     prop_dict = property_data.model_dump()
     prop_dict["created_at"] = datetime.now(timezone.utc).isoformat()
     prop_dict["active"] = True
+    prop_dict["status"] = "active"
     
     result = await db.properties.insert_one(prop_dict)
     prop_dict["id"] = str(result.inserted_id)
