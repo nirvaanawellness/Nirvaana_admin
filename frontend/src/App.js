@@ -100,6 +100,10 @@ function App() {
             path="/admin/incentives"
             element={user?.role === 'super_admin' ? <AdminIncentives user={user} onLogout={handleLogout} /> : <Navigate to="/login" />}
           />
+          <Route
+            path="/admin/expenses"
+            element={user?.role === 'super_admin' ? <AdminExpenses user={user} onLogout={handleLogout} /> : <Navigate to="/login" />}
+          />
           
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
