@@ -12,14 +12,22 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const therapyTypes = [
-  'Shirodhara',
-  'Hot Stone Massage',
-  'Reflexology',
+  // 30 Minutes
+  'Head, Neck & Shoulder Therapy',
   'Foot Reflexology',
+  'Champi Head Massage',
+  // 60 Minutes
   'Swedish Massage',
+  'Aromatherapy Massage',
   'Deep Tissue Massage',
-  'Aromatherapy',
-  'Custom Therapy'
+  'Balinese Massage',
+  'Shirodhara Therapy',
+  // 90 Minutes
+  'Royal Hot Stone Therapy',
+  'Signature Abhyanga Ritual',
+  'Couples Harmony Massage',
+  // Custom
+  'Custom Massage'
 ];
 
 const TherapistServiceEntry = ({ user, onLogout }) => {
