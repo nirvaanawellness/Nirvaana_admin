@@ -75,6 +75,19 @@ const AdminProperties = ({ user, onLogout }) => {
     }
   };
 
+  const handleDelete = async (propertyId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API}/properties/${propertyId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Property deleted successfully');
+      fetchProperties();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete property');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="bg-white/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-10">
