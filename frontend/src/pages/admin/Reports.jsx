@@ -925,59 +925,79 @@ const AdminReports = ({ user, onLogout }) => {
         </div>
       </div>
 
-      {/* Sales Report Dialog */}
+      {/* Sales Report Dialog - Full GST-Aware Breakdown */}
       <Dialog open={salesReportDialog} onOpenChange={setSalesReportDialog}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-serif text-xl">Sales Report</DialogTitle>
+            <DialogTitle className="font-serif text-xl">Sales Report - GST-Separated Settlement</DialogTitle>
           </DialogHeader>
           
           {salesReportData && (
             <div className="mt-4 space-y-4">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b bg-muted/30">
-                      <th className="text-left py-3 px-2">Property</th>
-                      <th className="text-right py-3 px-2">Share %</th>
-                      <th className="text-right py-3 px-2">Gross Revenue</th>
-                      <th className="text-right py-3 px-2">Hotel Expected</th>
-                      <th className="text-right py-3 px-2">Hotel Received</th>
-                      <th className="text-right py-3 px-2">Our Expected</th>
-                      <th className="text-right py-3 px-2">Our Received</th>
-                      <th className="text-right py-3 px-2 bg-amber-50">To Pay Hotel</th>
-                      <th className="text-right py-3 px-2 bg-primary/10">To Pay Nirvaana</th>
+                      <th className="text-left py-2 px-1.5 font-semibold" rowSpan={2}>Property</th>
+                      <th className="text-center py-2 px-1.5 font-semibold" rowSpan={2}>Share %</th>
+                      <th className="text-center py-2 px-1.5 bg-gray-100 font-semibold" colSpan={3}>Revenue Breakdown</th>
+                      <th className="text-center py-2 px-1.5 bg-amber-50 font-semibold" colSpan={4}>Hotel</th>
+                      <th className="text-center py-2 px-1.5 bg-primary/10 font-semibold" colSpan={4}>Nirvaana</th>
+                      <th className="text-center py-2 px-1.5 bg-green-50 font-semibold" rowSpan={2}>Settlement</th>
+                    </tr>
+                    <tr className="border-b bg-muted/20 text-[10px]">
+                      <th className="text-right py-1.5 px-1.5 bg-gray-50">Base</th>
+                      <th className="text-right py-1.5 px-1.5 bg-gray-50">GST</th>
+                      <th className="text-right py-1.5 px-1.5 bg-gray-50">Gross</th>
+                      <th className="text-right py-1.5 px-1.5 bg-amber-50/50">Base Exp</th>
+                      <th className="text-right py-1.5 px-1.5 bg-amber-50/50">GST Liab</th>
+                      <th className="text-right py-1.5 px-1.5 bg-amber-50/50">Total Exp</th>
+                      <th className="text-right py-1.5 px-1.5 bg-amber-50/50">Received</th>
+                      <th className="text-right py-1.5 px-1.5 bg-primary/5">Base Exp</th>
+                      <th className="text-right py-1.5 px-1.5 bg-primary/5">GST Liab</th>
+                      <th className="text-right py-1.5 px-1.5 bg-primary/5">Total Exp</th>
+                      <th className="text-right py-1.5 px-1.5 bg-primary/5">Received</th>
                     </tr>
                   </thead>
                   <tbody>
                     {salesReportData.map((p, i) => {
-                      // Calculate what needs to be paid
-                      // If Hotel received less than expected, Nirvaana owes Hotel
-                      const toPayHotel = p.hotel_expected - p.hotel_received;
-                      // If Nirvaana received less than expected, Hotel owes Nirvaana
-                      const toPayNirvaana = p.our_revenue - p.nirvaana_received;
+                      // Settlement: Positive hotel_settlement = Nirvaana owes Hotel
+                      // Positive our_settlement = Hotel owes Nirvaana
+                      const settlementAmount = Math.abs(p.hotel_settlement);
+                      const settlementDirection = p.hotel_settlement > 0.5 ? 'pay_hotel' : p.hotel_settlement < -0.5 ? 'pay_nirvaana' : 'settled';
                       
                       return (
                         <tr key={i} className="border-b hover:bg-muted/20">
-                          <td className="py-3 px-2 font-medium">{p.property_name}</td>
-                          <td className="py-3 px-2 text-right">{p.hotel_share_percent}%</td>
-                          <td className="py-3 px-2 text-right">₹{p.gross_revenue.toLocaleString()}</td>
-                          <td className="py-3 px-2 text-right">₹{p.hotel_expected.toFixed(0)}</td>
-                          <td className="py-3 px-2 text-right">₹{p.hotel_received.toFixed(0)}</td>
-                          <td className="py-3 px-2 text-right text-primary">₹{p.our_revenue.toFixed(0)}</td>
-                          <td className="py-3 px-2 text-right">₹{p.nirvaana_received.toFixed(0)}</td>
-                          <td className="py-3 px-2 text-right bg-amber-50/50 font-medium">
-                            {toPayHotel > 0 ? (
-                              <span className="text-amber-700">₹{toPayHotel.toFixed(0)}</span>
-                            ) : (
-                              <span className="text-muted-foreground">NA</span>
+                          <td className="py-2 px-1.5 font-medium">{p.property_name}</td>
+                          <td className="py-2 px-1.5 text-center">{p.hotel_share_percent}%</td>
+                          
+                          {/* Revenue Breakdown */}
+                          <td className="py-2 px-1.5 text-right bg-gray-50/50">₹{p.base_revenue.toFixed(0)}</td>
+                          <td className="py-2 px-1.5 text-right bg-gray-50/50 text-blue-600">₹{p.gst_collected.toFixed(0)}</td>
+                          <td className="py-2 px-1.5 text-right bg-gray-50/50 font-medium">₹{p.gross_revenue.toFixed(0)}</td>
+                          
+                          {/* Hotel Columns */}
+                          <td className="py-2 px-1.5 text-right bg-amber-50/30">₹{p.hotel_base_expected.toFixed(0)}</td>
+                          <td className="py-2 px-1.5 text-right bg-amber-50/30 text-blue-600">₹{p.hotel_gst_liability.toFixed(0)}</td>
+                          <td className="py-2 px-1.5 text-right bg-amber-50/30 font-medium">₹{p.hotel_total_expected.toFixed(0)}</td>
+                          <td className="py-2 px-1.5 text-right bg-amber-50/30">₹{p.hotel_received.toFixed(0)}</td>
+                          
+                          {/* Nirvaana Columns */}
+                          <td className="py-2 px-1.5 text-right bg-primary/5">₹{p.our_base_expected.toFixed(0)}</td>
+                          <td className="py-2 px-1.5 text-right bg-primary/5 text-blue-600">₹{p.our_gst_liability.toFixed(0)}</td>
+                          <td className="py-2 px-1.5 text-right bg-primary/5 font-medium">₹{p.our_total_expected.toFixed(0)}</td>
+                          <td className="py-2 px-1.5 text-right bg-primary/5">₹{p.our_received.toFixed(0)}</td>
+                          
+                          {/* Settlement */}
+                          <td className="py-2 px-1.5 text-right bg-green-50/50 font-medium">
+                            {settlementDirection === 'pay_hotel' && (
+                              <span className="text-amber-700">→ Hotel ₹{settlementAmount.toFixed(0)}</span>
                             )}
-                          </td>
-                          <td className="py-3 px-2 text-right bg-primary/5 font-medium">
-                            {toPayNirvaana > 0 ? (
-                              <span className="text-primary">₹{toPayNirvaana.toFixed(0)}</span>
-                            ) : (
-                              <span className="text-muted-foreground">NA</span>
+                            {settlementDirection === 'pay_nirvaana' && (
+                              <span className="text-primary">→ Us ₹{settlementAmount.toFixed(0)}</span>
+                            )}
+                            {settlementDirection === 'settled' && (
+                              <span className="text-green-600">Settled</span>
                             )}
                           </td>
                         </tr>
@@ -985,36 +1005,43 @@ const AdminReports = ({ user, onLogout }) => {
                     })}
                   </tbody>
                   <tfoot>
-                    <tr className="border-t-2 bg-muted/30 font-medium">
-                      <td className="py-3 px-2">Total</td>
-                      <td className="py-3 px-2"></td>
-                      <td className="py-3 px-2 text-right">₹{salesReportData.reduce((sum, p) => sum + p.gross_revenue, 0).toLocaleString()}</td>
-                      <td className="py-3 px-2 text-right">₹{salesReportData.reduce((sum, p) => sum + p.hotel_expected, 0).toFixed(0)}</td>
-                      <td className="py-3 px-2 text-right">₹{salesReportData.reduce((sum, p) => sum + p.hotel_received, 0).toFixed(0)}</td>
-                      <td className="py-3 px-2 text-right text-primary">₹{salesReportData.reduce((sum, p) => sum + p.our_revenue, 0).toFixed(0)}</td>
-                      <td className="py-3 px-2 text-right">₹{salesReportData.reduce((sum, p) => sum + p.nirvaana_received, 0).toFixed(0)}</td>
-                      <td className="py-3 px-2 text-right bg-amber-50/50">
-                        <span className="text-amber-700">
-                          ₹{salesReportData.reduce((sum, p) => sum + Math.max(0, p.hotel_expected - p.hotel_received), 0).toFixed(0)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-2 text-right bg-primary/5">
-                        <span className="text-primary">
-                          ₹{salesReportData.reduce((sum, p) => sum + Math.max(0, p.our_revenue - p.nirvaana_received), 0).toFixed(0)}
-                        </span>
-                      </td>
+                    <tr className="border-t-2 bg-muted/30 font-medium text-xs">
+                      <td className="py-2 px-1.5">Total</td>
+                      <td className="py-2 px-1.5"></td>
+                      <td className="py-2 px-1.5 text-right bg-gray-100">₹{salesReportData.reduce((sum, p) => sum + p.base_revenue, 0).toFixed(0)}</td>
+                      <td className="py-2 px-1.5 text-right bg-gray-100 text-blue-600">₹{salesReportData.reduce((sum, p) => sum + p.gst_collected, 0).toFixed(0)}</td>
+                      <td className="py-2 px-1.5 text-right bg-gray-100 font-bold">₹{salesReportData.reduce((sum, p) => sum + p.gross_revenue, 0).toFixed(0)}</td>
+                      <td className="py-2 px-1.5 text-right bg-amber-100/50">₹{salesReportData.reduce((sum, p) => sum + p.hotel_base_expected, 0).toFixed(0)}</td>
+                      <td className="py-2 px-1.5 text-right bg-amber-100/50 text-blue-600">₹{salesReportData.reduce((sum, p) => sum + p.hotel_gst_liability, 0).toFixed(0)}</td>
+                      <td className="py-2 px-1.5 text-right bg-amber-100/50 font-bold">₹{salesReportData.reduce((sum, p) => sum + p.hotel_total_expected, 0).toFixed(0)}</td>
+                      <td className="py-2 px-1.5 text-right bg-amber-100/50">₹{salesReportData.reduce((sum, p) => sum + p.hotel_received, 0).toFixed(0)}</td>
+                      <td className="py-2 px-1.5 text-right bg-primary/10">₹{salesReportData.reduce((sum, p) => sum + p.our_base_expected, 0).toFixed(0)}</td>
+                      <td className="py-2 px-1.5 text-right bg-primary/10 text-blue-600">₹{salesReportData.reduce((sum, p) => sum + p.our_gst_liability, 0).toFixed(0)}</td>
+                      <td className="py-2 px-1.5 text-right bg-primary/10 font-bold">₹{salesReportData.reduce((sum, p) => sum + p.our_total_expected, 0).toFixed(0)}</td>
+                      <td className="py-2 px-1.5 text-right bg-primary/10">₹{salesReportData.reduce((sum, p) => sum + p.our_received, 0).toFixed(0)}</td>
+                      <td className="py-2 px-1.5 text-right bg-green-100/50"></td>
                     </tr>
                   </tfoot>
                 </table>
               </div>
               
-              <div className="bg-muted/30 rounded-lg p-3 text-xs text-muted-foreground">
-                <p><strong>To Pay Hotel:</strong> Amount Nirvaana needs to pay to Hotel (when Hotel received less than expected)</p>
-                <p><strong>To Pay Nirvaana:</strong> Amount Hotel needs to pay to Nirvaana (when Nirvaana received less than expected)</p>
+              {/* Legend & Explanation */}
+              <div className="bg-muted/30 rounded-lg p-4 text-xs text-muted-foreground space-y-2">
+                <p className="font-medium text-foreground">Settlement Explanation:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li><strong>Base Exp:</strong> Expected share of BASE revenue (Share % applied on Base Amount only)</li>
+                  <li><strong>GST Liab:</strong> GST liability proportionate to base share (Base Share × 18%)</li>
+                  <li><strong>Total Exp:</strong> Expected TOTAL = Base Expected + GST Liability</li>
+                  <li><strong>Received:</strong> Actual GROSS amount collected by each party</li>
+                  <li><strong>Settlement:</strong> Difference between Expected Total and Received</li>
+                </ul>
+                <p className="pt-2 border-t border-border/50">
+                  <strong>→ Hotel:</strong> Nirvaana needs to pay Hotel • <strong>→ Us:</strong> Hotel needs to pay Nirvaana
+                </p>
               </div>
               
               <DialogFooter>
-                <Button onClick={downloadSalesReport}>
+                <Button onClick={downloadSalesReport} data-testid="download-sales-report">
                   <Download className="w-4 h-4 mr-2" /> Download Excel
                 </Button>
               </DialogFooter>
