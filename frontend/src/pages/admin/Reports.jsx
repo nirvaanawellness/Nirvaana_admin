@@ -686,19 +686,16 @@ const AdminReports = ({ user, onLogout }) => {
   const dateRange = getDateRange();
   const expenseDates = dateWiseData.filter(d => d.hasExpense);
 
+  const headerRightContent = (
+    <Button variant="ghost" size="sm" onClick={handleReset} className="text-[#B89D62]/80 hover:text-[#B89D62] hover:bg-[#B89D62]/10" data-testid="reset-filters-button">
+      <RotateCcw className="w-4 h-4 mr-2" strokeWidth={1.5} />
+      Reset
+    </Button>
+  );
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="bg-white/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/admin">
-              <Button variant="outline" size="sm" data-testid="back-button">
-                <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-serif text-foreground">Reports</h1>
-          </div>
-          <Button variant="outline" size="sm" onClick={handleReset} data-testid="reset-filters-button">
+      <AppHeader user={user} onLogout={onLogout} showBack={true} backTo="/admin" title="Reports" rightContent={headerRightContent} />
             <RotateCcw className="w-4 h-4 mr-2" strokeWidth={1.5} />
             Reset
           </Button>
