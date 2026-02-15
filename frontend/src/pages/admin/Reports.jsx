@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { 
-  ArrowLeft, FileText, Building2, DollarSign, TrendingUp, TrendingDown,
+  FileText, Building2, DollarSign, TrendingUp, TrendingDown,
   Download, RotateCcw, Receipt, PieChart as PieChartIcon,
   ChevronRight, X as XIcon, Info
 } from 'lucide-react';
@@ -16,6 +16,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   LineChart, Line, ReferenceDot
 } from 'recharts';
+import AppHeader from '@/components/shared/AppHeader';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
