@@ -143,10 +143,17 @@ async def create_therapist(therapist_data: TherapistCreate, current_user: dict =
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     
+    # Auto-generate secure password if not provided or if email service enabled
+    use_email = os.getenv("EMAIL_ENABLED", "false").lower() == "true"
+    if use_email or not therapist_data.password:
+        generated_password = email_service.generate_secure_password()
+    else:
+        generated_password = therapist_data.password
+    
     user_dict = {
         "email": therapist_data.email,
         "phone": therapist_data.phone,
-        "password_hash": get_password_hash(therapist_data.password),
+        "password_hash": get_password_hash(generated_password),
         "role": UserRole.THERAPIST,
         "full_name": therapist_data.full_name,
         "assigned_property_id": therapist_data.assigned_property_id,
@@ -162,7 +169,34 @@ async def create_therapist(therapist_data: TherapistCreate, current_user: dict =
     
     await db.therapists.insert_one(therapist_dict)
     
-    return {"message": "Therapist created successfully", "user_id": user_id}
+    # Send credentials via email
+    email_result = None
+    if use_email:
+        try:
+            email_result = await email_service.send_therapist_credentials(
+                therapist_email=therapist_data.email,
+                therapist_name=therapist_data.full_name,
+                password=generated_password,
+                property_name=therapist_data.assigned_property_id
+            )
+            logger.info(f"Email sent to {therapist_data.email}: {email_result}")
+        except Exception as e:
+            logger.error(f"Failed to send email: {str(e)}")
+            # Don't fail therapist creation if email fails
+    
+    response = {
+        "message": "Therapist created successfully",
+        "user_id": user_id
+    }
+    
+    # Include password in response if email not sent (for manual sharing)
+    if not use_email or (email_result and not email_result.get("success")):
+        response["password"] = generated_password
+        response["note"] = "Please share these credentials with the therapist manually"
+    else:
+        response["note"] = f"Login credentials sent to {therapist_data.email}"
+    
+    return response
 
 @api_router.get("/therapists")
 async def get_therapists(current_user: dict = Depends(get_current_admin)):
