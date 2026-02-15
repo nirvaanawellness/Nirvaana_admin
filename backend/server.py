@@ -20,6 +20,7 @@ from auth import (
     get_password_hash, verify_password, create_access_token,
     get_current_user, get_current_admin, security
 )
+from whatsapp_service import whatsapp_service
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
