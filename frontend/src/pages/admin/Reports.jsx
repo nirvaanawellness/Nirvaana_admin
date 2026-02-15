@@ -379,43 +379,71 @@ const AdminReports = ({ user, onLogout }) => {
     return chartItems;
   }, [services, expenses, properties]);
 
-  // Generate Sales Report
+  /**
+   * GENERATE SALES REPORT WITH FULL GST-AWARE BREAKDOWN
+   * 
+   * Shows per property:
+   * 1. Base Revenue (Excl. GST)
+   * 2. GST Collected
+   * 3. Gross Revenue (Incl. GST)
+   * 4. Share %
+   * 5. Hotel Expected (Base)
+   * 6. Hotel GST Liability
+   * 7. Hotel Total Expected
+   * 8. Hotel Received (Actual)
+   * 9. Our Expected (Base)
+   * 10. Our GST Liability
+   * 11. Our Total Expected
+   * 12. Our Received (Actual)
+   * 13. Settlement Amount
+   */
   const generateSalesReport = () => {
-    const propertyData = {};
+    // Group services by property
+    const propertyGroups = {};
     
     services.forEach(service => {
       const propId = service.property_id;
-      if (!propertyData[propId]) {
-        const prop = properties.find(p => p.hotel_name === propId);
-        const hotelSharePercent = prop?.revenue_share_percentage || 50;
-        propertyData[propId] = {
-          property_name: prop?.hotel_name || propId,
-          hotel_share_percent: hotelSharePercent,
-          gross_revenue: 0,
-          hotel_received: 0,
-          nirvaana_received: 0
-        };
+      if (!propertyGroups[propId]) {
+        propertyGroups[propId] = [];
       }
-      
-      propertyData[propId].gross_revenue += service.base_price;
-      
-      if (service.payment_received_by === 'hotel') {
-        propertyData[propId].hotel_received += service.total_amount;
-      } else {
-        propertyData[propId].nirvaana_received += service.total_amount;
-      }
+      propertyGroups[propId].push(service);
     });
     
-    // Calculate shares and outstanding per property
-    Object.values(propertyData).forEach(prop => {
-      const hotelSharePercent = prop.hotel_share_percent / 100;
-      prop.hotel_expected = prop.gross_revenue * hotelSharePercent;
-      prop.our_revenue = prop.gross_revenue * (1 - hotelSharePercent);
-      prop.hotel_outstanding = prop.hotel_expected - prop.hotel_received;
-      prop.our_outstanding = prop.our_revenue - prop.nirvaana_received;
+    // Calculate full GST-aware breakdown per property
+    const reportData = Object.entries(propertyGroups).map(([propId, propServices]) => {
+      const prop = properties.find(p => p.hotel_name === propId);
+      const hotelSharePercent = prop?.revenue_share_percentage || 50;
+      
+      const settlement = calculateGSTAwareSettlement(propServices, hotelSharePercent);
+      
+      return {
+        property_name: prop?.hotel_name || propId,
+        hotel_share_percent: hotelSharePercent,
+        
+        // Revenue breakdown
+        base_revenue: settlement.baseRevenue,
+        gst_collected: settlement.gstCollected,
+        gross_revenue: settlement.grossRevenue,
+        
+        // Hotel breakdown
+        hotel_base_expected: settlement.hotelBaseShare,
+        hotel_gst_liability: settlement.hotelGSTLiability,
+        hotel_total_expected: settlement.hotelExpectedTotal,
+        hotel_received: settlement.hotelCollectedGross,
+        
+        // Nirvaana breakdown
+        our_base_expected: settlement.nirvaanaBaseShare,
+        our_gst_liability: settlement.nirvaanaGSTLiability,
+        our_total_expected: settlement.nirvaanaExpectedTotal,
+        our_received: settlement.nirvaanaCollectedGross,
+        
+        // Settlement
+        hotel_settlement: settlement.hotelSettlement,
+        our_settlement: settlement.nirvaanaSettlement
+      };
     });
     
-    setSalesReportData(Object.values(propertyData));
+    setSalesReportData(reportData);
     setSalesReportDialog(true);
   };
 
