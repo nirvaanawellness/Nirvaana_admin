@@ -902,12 +902,15 @@ async def request_otp(data: OTPRequest):
     if user.get("role") != "super_admin":
         raise HTTPException(status_code=403, detail="OTP password change is only available for admin users")
     
+    # Use the actual user email for OTP storage (not username)
+    actual_email = user["email"]
+    
     # Generate 6-digit OTP
     otp = ''.join(random.choices(string.digits, k=6))
     
     # Store OTP with expiry (10 minutes)
     otp_record = {
-        "email": data.email,
+        "email": actual_email,  # Store actual email, not username
         "otp": otp,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "expires_at": (datetime.now(timezone.utc).replace(microsecond=0) + 
@@ -916,7 +919,7 @@ async def request_otp(data: OTPRequest):
     }
     
     # Remove any existing OTP for this email
-    await db.otp_records.delete_many({"email": data.email})
+    await db.otp_records.delete_many({"email": actual_email})
     
     # Insert new OTP
     await db.otp_records.insert_one(otp_record)
@@ -924,18 +927,18 @@ async def request_otp(data: OTPRequest):
     # Send OTP via email
     try:
         result = await email_service.send_otp_email(
-            email=data.email,
+            email=actual_email,
             otp=otp,
             user_name=user.get("full_name", "Admin")
         )
         if result.get("success"):
-            return {"message": "OTP sent to your registered email", "email_masked": f"***{data.email[-10:]}"}
+            return {"message": "OTP sent to your registered email", "email_masked": f"***{actual_email[-10:]}", "email": actual_email}
         else:
             # If email fails, return OTP in response (for development)
-            return {"message": "OTP generated (email delivery failed)", "otp": otp, "note": "Use this OTP to change password"}
+            return {"message": "OTP generated (email delivery failed)", "otp": otp, "email": actual_email, "note": "Use this OTP to change password"}
     except Exception:
         # Return OTP in response if email fails
-        return {"message": "OTP generated (email service unavailable)", "otp": otp, "note": "Use this OTP to change password"}
+        return {"message": "OTP generated (email service unavailable)", "otp": otp, "email": actual_email, "note": "Use this OTP to change password"}
 
 @api_router.post("/auth/verify-otp")
 async def verify_otp(data: OTPVerify):
