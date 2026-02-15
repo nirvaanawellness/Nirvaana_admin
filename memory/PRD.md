@@ -10,7 +10,7 @@ Build a secure, scalable, mobile-first internal operations management applicatio
 ## Core Requirements
 - Property/Hotel Management (Admin)
 - Therapist Onboarding with auto-generated credentials
-- Attendance System (Therapist check-in/out)
+- Attendance System (Therapist check-in/out + Admin daily tracking)
 - Service Entry System with GST (18%) calculation
 - Revenue Split Engine based on property agreements
 - Target & Incentive System
@@ -23,12 +23,64 @@ Build a secure, scalable, mobile-first internal operations management applicatio
 - **Frontend**: React, Tailwind CSS, shadcn/ui, Recharts
 - **Backend**: FastAPI, Pydantic
 - **Database**: MongoDB
-- **Authentication**: JWT
+- **Authentication**: JWT, OTP (for password change)
 - **Integrations**: Resend (Email), WhatsApp/SMS (Mocked)
 
 ## What's Been Implemented
 
-### Feb 15, 2026 - CRITICAL: GST-Separated Financial Reporting (P0 Complete)
+### Feb 15, 2026 - Session 2: Attendance Tracking, Archiving, OTP Security (P0 Complete)
+
+#### Admin Attendance Tracking (NEW)
+- **Admin Attendance Page** (`/admin/attendance`):
+  - Daily attendance log showing all therapists
+  - Summary cards: Total Therapists, Signed In, Not Signed In, Completion Rate
+  - Date navigation (previous/next day, today button, date picker)
+  - Property filter dropdown
+  - Status indicators: Complete (green), Working (blue), Absent (red)
+  - History button for each therapist to view historical records
+- **Attendance History Dialog**:
+  - Date range filter
+  - Full attendance history for selected therapist
+  - Shows sign-in/out times and status for each day
+- **New API Endpoints**:
+  - `GET /api/attendance/admin/daily` - Daily attendance with checked_in and not_checked_in lists
+  - `GET /api/attendance/admin/history/{therapist_id}` - Therapist attendance history
+
+#### Archiving System (Soft Delete) (NEW)
+- Properties and Therapists can now be "archived" instead of deleted
+- Archived items preserve historical data for reports and settlements
+- **Properties Page**: Shows "X Active • Y Archived" sections
+- **Therapists Page**: Shows "X Active • Y Archived" sections
+- Archive button with confirmation dialog
+- Restore button for archived items
+- **API Endpoints**:
+  - `DELETE /api/properties/{id}` - Archives property (soft delete)
+  - `PUT /api/properties/{id}/restore` - Restores archived property
+  - `DELETE /api/therapists/{id}` - Archives therapist (soft delete)
+  - `PUT /api/therapists/{id}/restore` - Restores archived therapist
+  - `GET /api/properties?include_archived=true` - Include archived in list
+
+#### OTP-Based Admin Password Change (NEW)
+- **Settings Page** (`/admin/settings`):
+  - Account Security section with email display
+  - Change Password button with 3-step dialog flow
+- **Password Change Flow**:
+  1. Request OTP (6-digit code sent to admin email)
+  2. Verify OTP (validates code, allows retry)
+  3. Enter new password (min 6 characters, with confirmation)
+- **Dev Mode**: OTP displayed in UI when email service unavailable
+- **API Endpoints**:
+  - `POST /api/auth/request-otp` - Generate and send OTP (admin only)
+  - `POST /api/auth/verify-otp` - Verify OTP without changing password
+  - `POST /api/auth/change-password` - Change password after OTP verification
+
+#### UI Branding (NEW)
+- Shared AppHeader component with logo and "Nirvaana Wellness" in golden letters
+- Dark gradient header across all admin pages
+- Settings link in admin dashboard header
+- Attendance card added to admin dashboard navigation
+
+### Feb 15, 2026 - Session 1: GST-Separated Financial Reporting (P0 Complete)
 **This update corrects the fundamental business logic for financial calculations.**
 
 #### Core Business Logic (CORRECTED)
@@ -36,49 +88,14 @@ Build a secure, scalable, mobile-first internal operations management applicatio
 - **GST is tracked separately and settled proportionately**
 - **Profit Formula**: `Net Profit = Our Base Share – Expenses` (GST excluded)
 
-#### Settlement Logic
-1. Calculate each party's expected BASE share from total base revenue
-2. Calculate each party's GST liability based on their base share (Base Share × 18%)
-3. Compare Expected Total (Base + GST) with Actual Collected (Gross)
-4. Settlement = Expected Total - Actually Collected
-
 #### Reports Page - Complete Overhaul
 **7 Summary Cards (GST-Separated)**:
-- Base Revenue (Excl. GST)
-- GST Collected (18%)
-- Gross Revenue (Incl. GST)
-- Hotel Base Share (Per contract %)
-- Our Base Share (Pre-expense)
-- Expenses
-- Net Profit (Base Share - Expenses) ✅
+- Base Revenue, GST Collected, Gross Revenue
+- Hotel Base Share, Our Base Share, Expenses, Net Profit
 
-**Calculation Logic Info Box**: Explains that revenue share % is applied on Base Amount only
-
-**Sales Report Dialog - Full GST Breakdown**:
-- Revenue Breakdown columns: Base, GST, Gross
-- Hotel columns: Base Expected, GST Liability, Total Expected, Received
-- Nirvaana columns: Base Expected, GST Liability, Total Expected, Received
-- Settlement column: Shows "→ Hotel" or "→ Us" with amount
-- Detailed explanation section
-- Download Excel functionality
-
-**P&L Report Dialog - Three Segments (GST-Aware)**:
-- **Segment 1: Selection Based** - Based on current filters (Year, Month, Quarter, Property)
-- **Segment 2: Current Period** - Current month only (1st to today)
-- **Segment 3: All Time** - Cumulative since business started
-- Each segment shows: Base Revenue, GST, Gross Revenue, Hotel/Our Share, Expenses, Net Profit, Transaction count
-- Formula explanation with GST-awareness note
-- Download Excel functionality
-
-**Charts Updated**:
-- Date-wise Line Chart: "Our Base Share" (not revenue) with red X expense markers
-- Bar Chart: "Our Base Share vs Expenses by Property"
-
-### Previous Updates (Feb 15, 2026)
-- Month timeline scroller for admin dashboard
-- Expense tracking system with CRUD
-- Login page UI fixes
-- Property-wise calculations
+**Sales Report Dialog**: Full GST breakdown with settlement calculations
+**P&L Report Dialog**: Three segments (Selection, Current Period, All-Time)
+**Charts**: Our Base Share vs Expenses with property breakdown
 
 ### Previous Implementations
 - User authentication for Admin and Therapist roles
@@ -87,18 +104,38 @@ Build a secure, scalable, mobile-first internal operations management applicatio
 - Service entry with GST calculation
 - Basic admin dashboard with statistics
 - Revenue distribution tracking (Hotel vs Nirvaana)
+- Month timeline scroller for admin dashboard
+- Expense tracking system with CRUD
 
 ## API Endpoints
+### Authentication
 - `POST /api/auth/login` - User authentication
+- `POST /api/auth/request-otp` - Request OTP for password change (admin)
+- `POST /api/auth/verify-otp` - Verify OTP
+- `POST /api/auth/change-password` - Change password with OTP
+
+### Properties
 - `GET/POST /api/properties` - Property management
-- `DELETE /api/properties/{id}` - Delete property
+- `DELETE /api/properties/{id}` - Archive property (soft delete)
+- `PUT /api/properties/{id}/restore` - Restore archived property
+
+### Therapists
 - `GET/POST /api/therapists` - Therapist management
-- `DELETE /api/therapists/{id}` - Remove therapist
+- `DELETE /api/therapists/{id}` - Archive therapist (soft delete)
+- `PUT /api/therapists/{id}/restore` - Restore archived therapist
+
+### Attendance (Admin)
+- `GET /api/attendance/admin/daily` - Daily attendance log
+- `GET /api/attendance/admin/history/{therapist_id}` - Therapist history
+
+### Services & Expenses
 - `GET/POST /api/services` - Service entries (with filters)
 - `GET/POST /api/expenses` - Expense tracking
-- `GET /api/expenses/summary/by-property` - Expense summary
 - `DELETE /api/expenses/{id}` - Delete expense
-- `GET /api/revenue/property/{id}` - Property revenue report
+
+### Analytics
+- `GET /api/analytics/dashboard` - Dashboard analytics
+- `GET /api/analytics/forecast` - Revenue forecast (weighted moving average)
 
 ## Test Credentials
 - **Admin**: admin@nirvaana.com / admin123
@@ -106,24 +143,26 @@ Build a secure, scalable, mobile-first internal operations management applicatio
 
 ## Prioritized Backlog
 
-### P0 (Critical) - COMPLETED ✅
+### P0 (Critical) - ALL COMPLETED ✅
 - [x] Dashboard month timeline scroller ✅
 - [x] Reports page with downloadable reports ✅
 - [x] Expense tracking system ✅
-- [x] **GST-separated financial reporting logic** ✅
+- [x] GST-separated financial reporting logic ✅
+- [x] Admin password change with OTP verification ✅
+- [x] Therapist deactivation flow (archiving) ✅
+- [x] Admin attendance tracking ✅
 
 ### P1 (High Priority)
-- [ ] Admin password change with OTP verification
-- [ ] Therapist deactivation flow (status field)
+- [ ] Full analytics dashboard UI with forecast graph
+- [ ] Revenue forecasting display (backend done, needs frontend)
 
 ### P2 (Medium Priority)
-- [ ] Full analytics dashboard with more graphs (Sales Trends, Pie Charts)
 - [ ] Automated monthly closing system
+- [ ] SMS backup system for notifications
 
 ### P3 (Low Priority)
 - [ ] Email therapist ID proofs to nirvaanabysunrise@gmail.com
 - [ ] Functional SMS/WhatsApp integration (requires user API keys)
-- [ ] Remove icon from login page (minor UI fix)
 
 ## Known Mocked Features
 - WhatsApp feedback messages (placeholder)
@@ -133,25 +172,40 @@ Build a secure, scalable, mobile-first internal operations management applicatio
 ```
 /app/
 ├── backend/
-│   ├── server.py (main API)
-│   ├── models.py (Pydantic models)
+│   ├── server.py (main API - 1000+ lines)
+│   ├── models.py (Pydantic models with EntityStatus)
 │   ├── auth.py (JWT auth)
 │   ├── email_service.py
 │   └── whatsapp_service.py (mocked)
 ├── frontend/
-│   └── src/pages/
-│       ├── Login.jsx
-│       ├── admin/
-│       │   ├── AdminDashboard.jsx (with timeline)
-│       │   ├── Reports.jsx (GST-separated) ✅
-│       │   ├── Expenses.js
-│       │   ├── Properties.js
-│       │   ├── Therapists.js
-│       │   └── Services.js
-│       └── therapist/
-│           ├── TherapistDashboard.jsx
-│           ├── Attendance.jsx
-│           └── ServiceEntry.jsx
+│   └── src/
+│       ├── App.js (routes including /admin/attendance)
+│       ├── components/
+│       │   └── shared/
+│       │       └── AppHeader.jsx (branded header)
+│       └── pages/
+│           ├── Login.jsx
+│           ├── admin/
+│           │   ├── Dashboard.jsx (with timeline + attendance nav)
+│           │   ├── Attendance.jsx (NEW - daily tracking)
+│           │   ├── Settings.jsx (NEW - OTP password change)
+│           │   ├── Reports.jsx (GST-separated)
+│           │   ├── Expenses.jsx
+│           │   ├── Properties.jsx (with archiving)
+│           │   ├── Therapists.jsx (with archiving)
+│           │   └── Services.jsx
+│           └── therapist/
+│               ├── Dashboard.jsx
+│               ├── Attendance.jsx
+│               └── ServiceEntry.jsx
+├── test_reports/
+│   └── iteration_3.json (latest test results)
 └── memory/
     └── PRD.md
 ```
+
+## Test Reports
+- `/app/test_reports/iteration_3.json` - Latest test results (Feb 15, 2026)
+  - Backend: 90% pass rate (19/22 tests)
+  - Frontend: 100% pass rate
+  - All new features verified working
