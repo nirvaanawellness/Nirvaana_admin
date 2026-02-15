@@ -250,12 +250,43 @@ const AdminProperties = ({ user, onLogout }) => {
                   </div>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-border/50">
+                <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
                   <div className={`inline-flex px-3 py-1 rounded-full text-xs ${
                     property.active ? 'bg-accent/20 text-accent' : 'bg-muted text-muted-foreground'
                   }`}>
                     {property.active ? 'Active' : 'Inactive'}
                   </div>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        data-testid={`delete-property-${index}`}
+                      >
+                        <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Property</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{property.hotel_name}"? This action cannot be undone.
+                          All therapists must be reassigned before deletion.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDelete(property.hotel_name)}
+                          className="bg-destructive hover:bg-destructive/90"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             ))
