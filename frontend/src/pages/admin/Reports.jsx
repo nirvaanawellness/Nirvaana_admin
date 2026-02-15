@@ -307,7 +307,7 @@ const AdminReports = ({ user, onLogout }) => {
     };
   }, [services, expenses, properties]);
 
-  // Date-wise revenue data for line chart
+  // Date-wise revenue data for line chart (using Our BASE Share)
   const dateWiseData = useMemo(() => {
     const dataByDate = {};
     const { from, to } = getDateRange();
@@ -317,17 +317,18 @@ const AdminReports = ({ user, onLogout }) => {
     const endDate = new Date(to);
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split('T')[0];
-      dataByDate[dateStr] = { date: dateStr, ourRevenue: 0, hasExpense: false };
+      dataByDate[dateStr] = { date: dateStr, ourBaseShare: 0, hasExpense: false };
     }
     
-    // Calculate our revenue per date (property-wise)
+    // Calculate our BASE share per date (share % on base_price only, NOT gross)
     services.forEach(service => {
       const date = service.date;
       const hotelSharePercent = getPropertyShare(service.property_id);
-      const ourRevenue = service.base_price * (1 - hotelSharePercent / 100);
+      // Our Base Share = Base Price × (100% - Hotel Share %)
+      const ourBaseShare = service.base_price * (1 - hotelSharePercent / 100);
       
       if (dataByDate[date]) {
-        dataByDate[date].ourRevenue += ourRevenue;
+        dataByDate[date].ourBaseShare += ourBaseShare;
       }
     });
     
@@ -341,33 +342,41 @@ const AdminReports = ({ user, onLogout }) => {
     return Object.values(dataByDate).sort((a, b) => a.date.localeCompare(b.date));
   }, [services, expenses, selectedYear, selectedMonth, selectedQuarter, selectedProperties]);
 
-  // Property chart data with correct calculations
+  // Property chart data with GST-aware calculations
   const chartData = useMemo(() => {
     const byProperty = {};
     
+    // Group services by property
     services.forEach(s => {
       const propId = s.property_id;
       if (!byProperty[propId]) {
-        const hotelSharePercent = getPropertyShare(propId);
-        byProperty[propId] = { 
-          name: propId, 
-          grossRevenue: 0,
-          ourRevenue: 0,
-          hotelSharePercent,
-          expenses: 0
-        };
+        byProperty[propId] = [];
       }
-      byProperty[propId].grossRevenue += s.base_price;
-      byProperty[propId].ourRevenue += s.base_price * (1 - byProperty[propId].hotelSharePercent / 100);
+      byProperty[propId].push(s);
     });
     
-    expenses.forEach(e => {
-      if (byProperty[e.property_id]) {
-        byProperty[e.property_id].expenses += e.amount;
-      }
+    // Calculate GST-aware data per property
+    const chartItems = Object.entries(byProperty).map(([propId, propServices]) => {
+      const hotelSharePercent = getPropertyShare(propId);
+      const settlement = calculateGSTAwareSettlement(propServices, hotelSharePercent);
+      
+      // Get expenses for this property
+      const propExpenses = expenses.filter(e => e.property_id === propId)
+        .reduce((sum, e) => sum + e.amount, 0);
+      
+      return {
+        name: propId,
+        baseRevenue: settlement.baseRevenue,
+        gstCollected: settlement.gstCollected,
+        grossRevenue: settlement.grossRevenue,
+        ourBaseShare: settlement.nirvaanaBaseShare,
+        hotelBaseShare: settlement.hotelBaseShare,
+        expenses: propExpenses,
+        hotelSharePercent
+      };
     });
     
-    return Object.values(byProperty);
+    return chartItems;
   }, [services, expenses, properties]);
 
   // Generate Sales Report
