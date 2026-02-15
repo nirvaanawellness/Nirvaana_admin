@@ -808,10 +808,10 @@ const AdminReports = ({ user, onLogout }) => {
         {dateWiseData.length > 0 && (
           <div className="glass rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-serif text-foreground">Date-wise Our Revenue</h3>
+              <h3 className="text-lg font-serif text-foreground">Date-wise Our Base Share</h3>
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <div className="w-3 h-0.5 bg-primary"></div> Revenue
+                  <div className="w-3 h-0.5 bg-primary"></div> Our Base Share
                 </span>
                 <span className="flex items-center gap-1">
                   <XIcon className="w-3 h-3 text-red-500" /> Expense recorded
@@ -828,12 +828,12 @@ const AdminReports = ({ user, onLogout }) => {
                 />
                 <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `₹${v}`} />
                 <Tooltip 
-                  formatter={(value) => [`₹${value.toLocaleString()}`, 'Our Revenue']}
+                  formatter={(value) => [`₹${value.toLocaleString()}`, 'Our Base Share']}
                   labelFormatter={(label) => `Date: ${label}`}
                 />
                 <Line 
                   type="monotone" 
-                  dataKey="ourRevenue" 
+                  dataKey="ourBaseShare" 
                   stroke="#B89D62" 
                   strokeWidth={2}
                   dot={{ r: 3 }}
@@ -843,7 +843,7 @@ const AdminReports = ({ user, onLogout }) => {
                   <ReferenceDot
                     key={idx}
                     x={d.date}
-                    y={d.ourRevenue}
+                    y={d.ourBaseShare}
                     shape={<ExpenseMarker />}
                   />
                 ))}
