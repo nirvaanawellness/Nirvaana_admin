@@ -208,13 +208,13 @@ const AdminSettings = ({ user, onLogout }) => {
             {step === 'request' && (
               <>
                 <div>
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email">Username or Email</Label>
                   <Input
                     id="email"
-                    type="email"
+                    type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your@email.com"
+                    placeholder="admin or your@email.com"
                     data-testid="otp-email-input"
                   />
                 </div>
