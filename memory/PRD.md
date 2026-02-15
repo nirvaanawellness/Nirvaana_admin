@@ -28,61 +28,55 @@ Build a secure, scalable, mobile-first internal operations management applicatio
 
 ## What's Been Implemented
 
-### Feb 15, 2026 - Major Dashboard & Reports Upgrade
-- **Admin Dashboard Enhancements**:
-  - Month timeline scroller (horizontal navigation across 12 months)
-  - Default view shows TODAY's data only
-  - Current month click → Month-to-date (1st to today)
-  - Past month click → Full month aggregation
-  - Reset to Today button for clearing all filters
-  - Dynamic date range labels on pie chart
-  - Clickable stat cards with detail dialogs
-  
-- **Reports Module Complete Overhaul** (Updated with Correct Business Logic):
-  - Renamed from "Revenue Reports" to "Reports"
-  - Filters: Year, Month, Quarter, Property (multi) - **Therapists filter removed**
-  - Properties display share percentage (e.g., "Taj Palace Mumbai (50%)")
-  - **Correct Profit Calculation Formula**:
-    ```
-    Net Profit = (Gross Revenue × Our Share %) – Expenses
-    ```
-  - Property-wise calculation BEFORE aggregation
-  - Dynamic share % fetched from property settings
-  
-  **New Summary Cards**:
-  - Gross Revenue (total bookings)
-  - Hotel Share (calculated per property %)
-  - Our Revenue (Gross - Hotel Share)
-  - Expenses
-  - Net Profit (Our Revenue - Expenses)
-  - Transactions count
+### Feb 15, 2026 - CRITICAL: GST-Separated Financial Reporting (P0 Complete)
+**This update corrects the fundamental business logic for financial calculations.**
 
-  **New Date-wise Line Graph**:
-  - Shows "Our Revenue" per date
-  - Red X markers on dates with expenses
-  - Respects property and date filters
-  
-  **Property Bar Chart**:
-  - Shows "Our Revenue vs Expenses" per property
-  - Tooltip shows consistent values (fixed mismatch bug)
-  
-  **Three Downloadable Reports**:
-  1. Sales Report - Revenue split by property share %, settlements & outstanding
-  2. Expense Report - Fixed & variable costs grouped by property
-  3. P&L Report - Shows calculation breakdown with formula explanation
+#### Core Business Logic (CORRECTED)
+- **Revenue share % is applied ONLY on Base Amount (excluding GST)**
+- **GST is tracked separately and settled proportionately**
+- **Profit Formula**: `Net Profit = Our Base Share – Expenses` (GST excluded)
 
-- **Expense Tracking System**:
-  - CRUD API endpoints for expenses
-  - Recurring costs (salary, living cost)
-  - Ad-hoc costs (marketing, disposables, oils, etc.)
-  - Property-wise expense tracking
-  - Summary cards (Recurring, Ad-hoc, Total)
-  - Filter by property, expense type, date range
-  - Excel export
+#### Settlement Logic
+1. Calculate each party's expected BASE share from total base revenue
+2. Calculate each party's GST liability based on their base share (Base Share × 18%)
+3. Compare Expected Total (Base + GST) with Actual Collected (Gross)
+4. Settlement = Expected Total - Actually Collected
 
-- **Login Page UI Fix**:
-  - Updated header styling with gold color
-  - Changed subtitle text
+#### Reports Page - Complete Overhaul
+**7 Summary Cards (GST-Separated)**:
+- Base Revenue (Excl. GST)
+- GST Collected (18%)
+- Gross Revenue (Incl. GST)
+- Hotel Base Share (Per contract %)
+- Our Base Share (Pre-expense)
+- Expenses
+- Net Profit (Base Share - Expenses) ✅
+
+**Calculation Logic Info Box**: Explains that revenue share % is applied on Base Amount only
+
+**Sales Report Dialog - Full GST Breakdown**:
+- Revenue Breakdown columns: Base, GST, Gross
+- Hotel columns: Base Expected, GST Liability, Total Expected, Received
+- Nirvaana columns: Base Expected, GST Liability, Total Expected, Received
+- Settlement column: Shows "→ Hotel" or "→ Us" with amount
+- Detailed explanation section
+- Download Excel functionality
+
+**P&L Report Dialog - GST-Aware**:
+- Current Period & Cumulative (All Time)
+- Shows: Base Revenue, GST Collected, Gross Revenue, Hotel/Our Base Share, Expenses, Net Profit
+- Formula explanation with GST-awareness note
+- Download Excel functionality
+
+**Charts Updated**:
+- Date-wise Line Chart: "Our Base Share" (not revenue) with red X expense markers
+- Bar Chart: "Our Base Share vs Expenses by Property"
+
+### Previous Updates (Feb 15, 2026)
+- Month timeline scroller for admin dashboard
+- Expense tracking system with CRUD
+- Login page UI fixes
+- Property-wise calculations
 
 ### Previous Implementations
 - User authentication for Admin and Therapist roles
@@ -99,9 +93,9 @@ Build a secure, scalable, mobile-first internal operations management applicatio
 - `GET/POST /api/therapists` - Therapist management
 - `DELETE /api/therapists/{id}` - Remove therapist
 - `GET/POST /api/services` - Service entries (with filters)
-- `GET/POST /api/expenses` - Expense tracking (NEW)
-- `GET /api/expenses/summary/by-property` - Expense summary (NEW)
-- `DELETE /api/expenses/{id}` - Delete expense (NEW)
+- `GET/POST /api/expenses` - Expense tracking
+- `GET /api/expenses/summary/by-property` - Expense summary
+- `DELETE /api/expenses/{id}` - Delete expense
 - `GET /api/revenue/property/{id}` - Property revenue report
 
 ## Test Credentials
@@ -110,22 +104,24 @@ Build a secure, scalable, mobile-first internal operations management applicatio
 
 ## Prioritized Backlog
 
-### P0 (Critical)
+### P0 (Critical) - COMPLETED ✅
 - [x] Dashboard month timeline scroller ✅
 - [x] Reports page with downloadable reports ✅
 - [x] Expense tracking system ✅
+- [x] **GST-separated financial reporting logic** ✅
 
 ### P1 (High Priority)
 - [ ] Admin password change with OTP verification
 - [ ] Therapist deactivation flow (status field)
 
 ### P2 (Medium Priority)
-- [ ] Full analytics dashboard with graphs (Sales Trends)
+- [ ] Full analytics dashboard with more graphs (Sales Trends, Pie Charts)
 - [ ] Automated monthly closing system
 
 ### P3 (Low Priority)
 - [ ] Email therapist ID proofs to nirvaanabysunrise@gmail.com
 - [ ] Functional SMS/WhatsApp integration (requires user API keys)
+- [ ] Remove icon from login page (minor UI fix)
 
 ## Known Mocked Features
 - WhatsApp feedback messages (placeholder)
@@ -142,15 +138,16 @@ Build a secure, scalable, mobile-first internal operations management applicatio
 │   └── whatsapp_service.py (mocked)
 ├── frontend/
 │   └── src/pages/
+│       ├── Login.jsx
 │       ├── admin/
-│       │   ├── Dashboard.jsx (with timeline)
-│       │   ├── Reports.jsx (comprehensive)
-│       │   ├── Expenses.jsx (NEW)
-│       │   ├── Properties.jsx
-│       │   ├── Therapists.jsx
-│       │   └── Services.jsx
+│       │   ├── AdminDashboard.jsx (with timeline)
+│       │   ├── Reports.jsx (GST-separated) ✅
+│       │   ├── Expenses.js
+│       │   ├── Properties.js
+│       │   ├── Therapists.js
+│       │   └── Services.js
 │       └── therapist/
-│           ├── Dashboard.jsx
+│           ├── TherapistDashboard.jsx
 │           ├── Attendance.jsx
 │           └── ServiceEntry.jsx
 └── memory/
