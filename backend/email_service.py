@@ -386,6 +386,168 @@ Team Nirvaana Wellness
         else:
             return {"success": False, "message": f"Unknown provider: {self.provider}"}
 
+    async def send_feedback_email(
+        self,
+        customer_email: str,
+        customer_name: str,
+        therapy_type: str,
+        therapist_name: str,
+        property_name: str,
+        service_date: str
+    ) -> dict:
+        """
+        Send feedback request email to customer after service completion
+        
+        Args:
+            customer_email: Customer's email address
+            customer_name: Customer's name
+            therapy_type: Type of therapy received
+            therapist_name: Name of the therapist
+            property_name: Property/hotel name
+            service_date: Date of service
+            
+        Returns:
+            dict with success status
+        """
+        
+        if not self.enabled:
+            logger.info("Email service is disabled. Feedback email not sent.")
+            return {"success": False, "message": "Email service disabled"}
+        
+        if not customer_email:
+            logger.info("No customer email provided. Feedback email not sent.")
+            return {"success": False, "message": "No customer email provided"}
+        
+        # Google Form feedback link (you can replace with your own form)
+        feedback_url = f"https://forms.gle/nirvaana-feedback"  # Replace with actual form
+        
+        subject = f"Thank You for Visiting Nirvaana Wellness at {property_name}"
+        
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: 'Georgia', serif; line-height: 1.8; color: #2C2420; margin: 0; padding: 0; }}
+        .container {{ max-width: 600px; margin: 0 auto; }}
+        .header {{ background: linear-gradient(135deg, #2C2420 0%, #3d3329 50%, #B89D62 100%); color: white; padding: 40px 30px; text-align: center; }}
+        .logo {{ font-size: 32px; font-weight: bold; letter-spacing: 3px; margin-bottom: 5px; color: #B89D62; }}
+        .tagline {{ font-size: 12px; letter-spacing: 2px; opacity: 0.9; }}
+        .content {{ background: #FFFEF9; padding: 40px 30px; }}
+        .greeting {{ font-size: 24px; color: #2C2420; margin-bottom: 20px; }}
+        .service-card {{ background: white; padding: 25px; border-radius: 10px; margin: 25px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-left: 4px solid #B89D62; }}
+        .service-detail {{ display: flex; justify-content: space-between; margin: 10px 0; padding: 8px 0; border-bottom: 1px solid #f0ede8; }}
+        .service-label {{ color: #6B5E55; font-size: 14px; }}
+        .service-value {{ color: #2C2420; font-weight: 600; }}
+        .feedback-section {{ text-align: center; padding: 30px 0; }}
+        .feedback-text {{ font-size: 16px; color: #6B5E55; margin-bottom: 20px; }}
+        .feedback-button {{ display: inline-block; background: linear-gradient(135deg, #B89D62 0%, #9A8354 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 30px; font-size: 16px; font-weight: 600; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(184, 157, 98, 0.3); }}
+        .feedback-button:hover {{ background: linear-gradient(135deg, #9A8354 0%, #B89D62 100%); }}
+        .stars {{ font-size: 28px; margin: 15px 0; }}
+        .footer {{ background: #2C2420; color: #B89D62; padding: 30px; text-align: center; }}
+        .social {{ margin: 15px 0; }}
+        .social a {{ color: #B89D62; text-decoration: none; margin: 0 10px; }}
+        .copyright {{ font-size: 11px; color: #6B5E55; margin-top: 15px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">NIRVAANA</div>
+            <div class="tagline">WELLNESS & SPA</div>
+            <p style="margin-top: 15px; font-style: italic;">A Premium Spa Brand by Sunrise Wellness</p>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">Namaste {customer_name},</div>
+            
+            <p>Thank you for choosing <strong>Nirvaana Wellness</strong> for your wellness journey. We hope your experience with us was rejuvenating and memorable.</p>
+            
+            <div class="service-card">
+                <h3 style="margin-top: 0; color: #B89D62;">Your Session Details</h3>
+                <div class="service-detail">
+                    <span class="service-label">Service</span>
+                    <span class="service-value">{therapy_type}</span>
+                </div>
+                <div class="service-detail">
+                    <span class="service-label">Therapist</span>
+                    <span class="service-value">{therapist_name}</span>
+                </div>
+                <div class="service-detail">
+                    <span class="service-label">Location</span>
+                    <span class="service-value">{property_name}</span>
+                </div>
+                <div class="service-detail" style="border-bottom: none;">
+                    <span class="service-label">Date</span>
+                    <span class="service-value">{service_date}</span>
+                </div>
+            </div>
+            
+            <div class="feedback-section">
+                <p class="feedback-text">Your feedback helps us serve you better.<br>We'd love to hear about your experience!</p>
+                
+                <div class="stars">⭐ ⭐ ⭐ ⭐ ⭐</div>
+                
+                <a href="{feedback_url}" class="feedback-button">Share Your Feedback</a>
+                
+                <p style="font-size: 12px; color: #999; margin-top: 20px;">Takes only 2 minutes</p>
+            </div>
+            
+            <p style="text-align: center; color: #6B5E55;">
+                We look forward to welcoming you again soon.<br>
+                <strong style="color: #B89D62;">Stay Relaxed. Stay Healthy.</strong>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <div class="logo" style="font-size: 20px;">NIRVAANA WELLNESS</div>
+            <div class="social">
+                <a href="#">Instagram</a> |
+                <a href="#">Facebook</a> |
+                <a href="tel:+919520034538">+91-9520034538</a>
+            </div>
+            <div class="copyright">
+                © 2026 Nirvaana Wellness by Sunrise Wellness. All rights reserved.<br>
+                This is an automated email. Please do not reply.
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+"""
+        
+        text_content = f"""
+NIRVAANA WELLNESS & SPA
+A Premium Spa Brand by Sunrise Wellness
+
+Namaste {customer_name},
+
+Thank you for choosing Nirvaana Wellness for your wellness journey.
+
+Your Session Details:
+- Service: {therapy_type}
+- Therapist: {therapist_name}
+- Location: {property_name}
+- Date: {service_date}
+
+We'd love to hear about your experience!
+Share your feedback: {feedback_url}
+
+We look forward to welcoming you again soon.
+Stay Relaxed. Stay Healthy.
+
+Contact: +91-9520034538
+
+© 2026 Nirvaana Wellness. All rights reserved.
+"""
+        
+        if self.provider == "resend":
+            return await self._send_via_resend(customer_email, subject, html_content, text_content)
+        elif self.provider == "sendgrid":
+            return await self._send_via_sendgrid(customer_email, subject, html_content, text_content)
+        else:
+            return {"success": False, "message": f"Unknown provider: {self.provider}"}
+
 
 # Global instance
 email_service = EmailService()
