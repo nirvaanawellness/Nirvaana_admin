@@ -544,6 +544,132 @@ async def get_property_revenue(
         "settlement_note": "Positive = Nirvaana owes Hotel, Negative = Hotel owes Nirvaana"
     }
 
+# ================= EXPENSE ENDPOINTS =================
+
+@api_router.post("/expenses")
+async def create_expense(expense_data: ExpenseCreate, current_user: dict = Depends(get_current_admin)):
+    """Create a new expense record"""
+    expense_dict = expense_data.model_dump()
+    expense_dict["created_by"] = current_user["user_id"]
+    expense_dict["created_at"] = datetime.now(timezone.utc).isoformat()
+    
+    result = await db.expenses.insert_one(expense_dict)
+    expense_dict["id"] = str(result.inserted_id)
+    
+    return {"message": "Expense created successfully", "expense_id": str(result.inserted_id)}
+
+@api_router.get("/expenses")
+async def get_all_expenses(
+    property_id: Optional[List[str]] = Query(None),
+    expense_type: Optional[List[str]] = Query(None),
+    category: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Get all expenses with optional filters"""
+    query = {}
+    
+    if property_id and len(property_id) > 0:
+        if len(property_id) == 1:
+            query["property_id"] = property_id[0]
+        else:
+            query["property_id"] = {"$in": property_id}
+    
+    if expense_type and len(expense_type) > 0:
+        if len(expense_type) == 1:
+            query["expense_type"] = expense_type[0]
+        else:
+            query["expense_type"] = {"$in": expense_type}
+    
+    if category:
+        query["category"] = category
+    
+    if date_from:
+        query["date"] = {"$gte": date_from}
+    if date_to:
+        if "date" in query:
+            query["date"]["$lte"] = date_to
+        else:
+            query["date"] = {"$lte": date_to}
+    
+    expenses_cursor = db.expenses.find(query)
+    expenses = []
+    async for expense in expenses_cursor:
+        expense_dict = {k: v for k, v in expense.items() if k != "_id"}
+        expense_dict["id"] = str(expense["_id"])
+        expenses.append(expense_dict)
+    
+    return expenses
+
+@api_router.get("/expenses/{expense_id}")
+async def get_expense(expense_id: str, current_user: dict = Depends(get_current_admin)):
+    """Get a specific expense by ID"""
+    from bson import ObjectId
+    expense = await db.expenses.find_one({"_id": ObjectId(expense_id)})
+    if not expense:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    
+    expense_dict = {k: v for k, v in expense.items() if k != "_id"}
+    expense_dict["id"] = str(expense["_id"])
+    return expense_dict
+
+@api_router.delete("/expenses/{expense_id}")
+async def delete_expense(expense_id: str, current_user: dict = Depends(get_current_admin)):
+    """Delete an expense record"""
+    from bson import ObjectId
+    result = await db.expenses.delete_one({"_id": ObjectId(expense_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    return {"message": "Expense deleted successfully"}
+
+@api_router.get("/expenses/summary/by-property")
+async def get_expense_summary(
+    property_id: Optional[str] = None,
+    month: Optional[int] = None,
+    year: Optional[int] = None,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Get expense summary grouped by type for a property"""
+    now = datetime.now(timezone.utc)
+    target_month = month or now.month
+    target_year = year or now.year
+    
+    query = {
+        "date": {"$regex": f"^{target_year}-{target_month:02d}"}
+    }
+    if property_id:
+        query["property_id"] = property_id
+    
+    expenses = await db.expenses.find(query, {"_id": 0}).to_list(10000)
+    
+    # Group by type
+    summary = {
+        "recurring": {"salary": 0, "living_cost": 0, "total": 0},
+        "adhoc": {"marketing": 0, "disposables": 0, "oil_aromatics": 0, "essentials": 0, "bill_books": 0, "other": 0, "total": 0}
+    }
+    
+    for expense in expenses:
+        exp_type = expense["expense_type"]
+        category = expense["category"]
+        amount = expense["amount"]
+        
+        if category == "recurring":
+            if exp_type in summary["recurring"]:
+                summary["recurring"][exp_type] += amount
+            summary["recurring"]["total"] += amount
+        else:
+            if exp_type in summary["adhoc"]:
+                summary["adhoc"][exp_type] += amount
+            summary["adhoc"]["total"] += amount
+    
+    summary["grand_total"] = summary["recurring"]["total"] + summary["adhoc"]["total"]
+    summary["month"] = target_month
+    summary["year"] = target_year
+    summary["expense_count"] = len(expenses)
+    
+    return summary
+
 app.include_router(api_router)
 
 app.add_middleware(
