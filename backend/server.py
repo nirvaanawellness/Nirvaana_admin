@@ -163,6 +163,24 @@ async def get_therapists(current_user: dict = Depends(get_current_admin)):
     therapists = await db.therapists.find({}, {"_id": 0}).to_list(1000)
     return therapists
 
+@api_router.delete("/therapists/{therapist_id}")
+async def delete_therapist(therapist_id: str, current_user: dict = Depends(get_current_admin)):
+    """Delete therapist and their user account"""
+    
+    # Find therapist
+    therapist = await db.therapists.find_one({"user_id": therapist_id})
+    if not therapist:
+        raise HTTPException(status_code=404, detail="Therapist not found")
+    
+    # Delete from therapists collection
+    await db.therapists.delete_one({"user_id": therapist_id})
+    
+    # Delete user account
+    from bson import ObjectId
+    await db.users.delete_one({"_id": ObjectId(therapist_id)})
+    
+    return {"message": "Therapist removed successfully"}
+
 @api_router.get("/therapists/me")
 async def get_therapist_profile(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "therapist":
