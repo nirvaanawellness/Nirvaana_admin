@@ -4,15 +4,18 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { 
   ArrowLeft, FileText, Building2, DollarSign, TrendingUp, TrendingDown,
-  Download, Filter, X, RotateCcw, Receipt, PieChart as PieChartIcon,
-  ChevronRight
+  Download, RotateCcw, Receipt, PieChart as PieChartIcon,
+  ChevronRight, X as XIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  LineChart, Line, ReferenceDot
+} from 'recharts';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -31,9 +34,20 @@ const QUARTERS = [
   { value: 'Q4', label: 'Q4 (Oct-Dec)', months: [10, 11, 12] }
 ];
 
+// Custom X marker for expense dates
+const ExpenseMarker = (props) => {
+  const { cx, cy } = props;
+  if (!cx || !cy) return null;
+  return (
+    <g>
+      <line x1={cx - 6} y1={cy - 6} x2={cx + 6} y2={cy + 6} stroke="#ef4444" strokeWidth={3} />
+      <line x1={cx + 6} y1={cy - 6} x2={cx - 6} y2={cy + 6} stroke="#ef4444" strokeWidth={3} />
+    </g>
+  );
+};
+
 const AdminReports = ({ user, onLogout }) => {
   const [properties, setProperties] = useState([]);
-  const [therapists, setTherapists] = useState([]);
   const [services, setServices] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +58,6 @@ const AdminReports = ({ user, onLogout }) => {
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [selectedQuarter, setSelectedQuarter] = useState('');
   const [selectedProperties, setSelectedProperties] = useState([]);
-  const [selectedTherapists, setSelectedTherapists] = useState([]);
   
   // Report dialogs
   const [salesReportDialog, setSalesReportDialog] = useState(false);
@@ -66,21 +79,18 @@ const AdminReports = ({ user, onLogout }) => {
   }, []);
 
   useEffect(() => {
-    fetchFilteredData();
-  }, [selectedYear, selectedMonth, selectedQuarter, selectedProperties, selectedTherapists]);
+    if (properties.length > 0) {
+      fetchFilteredData();
+    }
+  }, [selectedYear, selectedMonth, selectedQuarter, selectedProperties, properties]);
 
   const fetchInitialData = async () => {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const [propsRes, therapistsRes] = await Promise.all([
-        axios.get(`${API}/properties`, { headers }),
-        axios.get(`${API}/therapists`, { headers })
-      ]);
-      
+      const propsRes = await axios.get(`${API}/properties`, { headers });
       setProperties(propsRes.data);
-      setTherapists(therapistsRes.data);
     } catch (error) {
       toast.error('Failed to load data');
     }
@@ -95,7 +105,6 @@ const AdminReports = ({ user, onLogout }) => {
       const endMonth = quarter.months[2];
       const startDate = `${selectedYear}-${String(startMonth).padStart(2, '0')}-01`;
       
-      // If quarter includes current month and year, limit to today
       if (selectedYear === now.getFullYear() && quarter.months.includes(now.getMonth() + 1)) {
         return { from: startDate, to: today };
       }
@@ -106,7 +115,6 @@ const AdminReports = ({ user, onLogout }) => {
     
     const startDate = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`;
     
-    // If current month and year, limit to today
     if (selectedYear === now.getFullYear() && selectedMonth === now.getMonth() + 1) {
       return { from: startDate, to: today };
     }
@@ -129,9 +137,6 @@ const AdminReports = ({ user, onLogout }) => {
       if (selectedProperties.length > 0) {
         selectedProperties.forEach(p => params.append('property_id', p));
       }
-      if (selectedTherapists.length > 0) {
-        selectedTherapists.forEach(t => params.append('therapist_id', t));
-      }
       
       const [servicesRes, expensesRes] = await Promise.all([
         axios.get(`${API}/services?${params.toString()}`, { headers }),
@@ -152,7 +157,6 @@ const AdminReports = ({ user, onLogout }) => {
     setSelectedMonth(now.getMonth() + 1);
     setSelectedQuarter('');
     setSelectedProperties([]);
-    setSelectedTherapists([]);
   };
 
   const toggleProperty = (propertyName) => {
@@ -161,24 +165,132 @@ const AdminReports = ({ user, onLogout }) => {
     );
   };
 
-  const toggleTherapist = (therapistId) => {
-    setSelectedTherapists(prev => 
-      prev.includes(therapistId) ? prev.filter(t => t !== therapistId) : [...prev, therapistId]
-    );
+  // Get property share percentage
+  const getPropertyShare = (propertyId) => {
+    const prop = properties.find(p => p.hotel_name === propertyId || p.id === propertyId);
+    return prop?.revenue_share_percentage || 50;
   };
 
-  // Calculate summary stats
+  // Calculate summary with CORRECT profit logic (property-wise)
   const summary = useMemo(() => {
-    const totalRevenue = services.reduce((sum, s) => sum + s.total_amount, 0);
-    const totalBase = services.reduce((sum, s) => sum + s.base_price, 0);
-    const totalGst = services.reduce((sum, s) => sum + s.gst_amount, 0);
-    const hotelReceived = services.filter(s => s.payment_received_by === 'hotel').reduce((sum, s) => sum + s.total_amount, 0);
-    const nirvaanaReceived = services.filter(s => s.payment_received_by === 'nirvaana').reduce((sum, s) => sum + s.total_amount, 0);
-    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
-    const netProfit = totalBase - totalExpenses;
+    // Group by property for accurate calculations
+    const propertyStats = {};
     
-    return { totalRevenue, totalBase, totalGst, hotelReceived, nirvaanaReceived, totalExpenses, netProfit };
-  }, [services, expenses]);
+    services.forEach(service => {
+      const propId = service.property_id;
+      if (!propertyStats[propId]) {
+        const hotelSharePercent = getPropertyShare(propId);
+        propertyStats[propId] = {
+          grossRevenue: 0,
+          hotelSharePercent,
+          expenses: 0
+        };
+      }
+      propertyStats[propId].grossRevenue += service.base_price;
+    });
+    
+    // Add expenses per property
+    expenses.forEach(exp => {
+      const propId = exp.property_id;
+      if (propertyStats[propId]) {
+        propertyStats[propId].expenses += exp.amount;
+      }
+    });
+    
+    // Calculate totals using correct formula
+    let totalGrossRevenue = 0;
+    let totalHotelShare = 0;
+    let totalOurRevenue = 0;
+    let totalExpenses = 0;
+    let totalNetProfit = 0;
+    
+    Object.values(propertyStats).forEach(stat => {
+      const hotelShare = stat.grossRevenue * (stat.hotelSharePercent / 100);
+      const ourRevenue = stat.grossRevenue - hotelShare;
+      const netProfit = ourRevenue - stat.expenses;
+      
+      totalGrossRevenue += stat.grossRevenue;
+      totalHotelShare += hotelShare;
+      totalOurRevenue += ourRevenue;
+      totalExpenses += stat.expenses;
+      totalNetProfit += netProfit;
+    });
+    
+    const totalGst = services.reduce((sum, s) => sum + s.gst_amount, 0);
+    
+    return { 
+      grossRevenue: totalGrossRevenue,
+      hotelShare: totalHotelShare,
+      ourRevenue: totalOurRevenue,
+      totalGst,
+      totalExpenses,
+      netProfit: totalNetProfit,
+      transactionCount: services.length
+    };
+  }, [services, expenses, properties]);
+
+  // Date-wise revenue data for line chart
+  const dateWiseData = useMemo(() => {
+    const dataByDate = {};
+    const { from, to } = getDateRange();
+    
+    // Initialize all dates in range
+    const startDate = new Date(from);
+    const endDate = new Date(to);
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split('T')[0];
+      dataByDate[dateStr] = { date: dateStr, ourRevenue: 0, hasExpense: false };
+    }
+    
+    // Calculate our revenue per date (property-wise)
+    services.forEach(service => {
+      const date = service.date;
+      const hotelSharePercent = getPropertyShare(service.property_id);
+      const ourRevenue = service.base_price * (1 - hotelSharePercent / 100);
+      
+      if (dataByDate[date]) {
+        dataByDate[date].ourRevenue += ourRevenue;
+      }
+    });
+    
+    // Mark expense dates
+    expenses.forEach(exp => {
+      if (dataByDate[exp.date]) {
+        dataByDate[exp.date].hasExpense = true;
+      }
+    });
+    
+    return Object.values(dataByDate).sort((a, b) => a.date.localeCompare(b.date));
+  }, [services, expenses, selectedYear, selectedMonth, selectedQuarter, selectedProperties]);
+
+  // Property chart data with correct calculations
+  const chartData = useMemo(() => {
+    const byProperty = {};
+    
+    services.forEach(s => {
+      const propId = s.property_id;
+      if (!byProperty[propId]) {
+        const hotelSharePercent = getPropertyShare(propId);
+        byProperty[propId] = { 
+          name: propId, 
+          grossRevenue: 0,
+          ourRevenue: 0,
+          hotelSharePercent,
+          expenses: 0
+        };
+      }
+      byProperty[propId].grossRevenue += s.base_price;
+      byProperty[propId].ourRevenue += s.base_price * (1 - byProperty[propId].hotelSharePercent / 100);
+    });
+    
+    expenses.forEach(e => {
+      if (byProperty[e.property_id]) {
+        byProperty[e.property_id].expenses += e.amount;
+      }
+    });
+    
+    return Object.values(byProperty);
+  }, [services, expenses, properties]);
 
   // Generate Sales Report
   const generateSalesReport = () => {
@@ -188,20 +300,17 @@ const AdminReports = ({ user, onLogout }) => {
       const propId = service.property_id;
       if (!propertyData[propId]) {
         const prop = properties.find(p => p.hotel_name === propId);
+        const hotelSharePercent = prop?.revenue_share_percentage || 50;
         propertyData[propId] = {
           property_name: prop?.hotel_name || propId,
-          revenue_share: prop?.revenue_share_percentage || 50,
-          total_revenue: 0,
-          total_base: 0,
-          total_gst: 0,
+          hotel_share_percent: hotelSharePercent,
+          gross_revenue: 0,
           hotel_received: 0,
           nirvaana_received: 0
         };
       }
       
-      propertyData[propId].total_revenue += service.total_amount;
-      propertyData[propId].total_base += service.base_price;
-      propertyData[propId].total_gst += service.gst_amount;
+      propertyData[propId].gross_revenue += service.base_price;
       
       if (service.payment_received_by === 'hotel') {
         propertyData[propId].hotel_received += service.total_amount;
@@ -210,13 +319,13 @@ const AdminReports = ({ user, onLogout }) => {
       }
     });
     
-    // Calculate expected shares and outstanding
+    // Calculate shares and outstanding per property
     Object.values(propertyData).forEach(prop => {
-      const sharePercent = prop.revenue_share / 100;
-      prop.hotel_expected = prop.total_base * sharePercent;
-      prop.nirvaana_expected = prop.total_base * (1 - sharePercent);
+      const hotelSharePercent = prop.hotel_share_percent / 100;
+      prop.hotel_expected = prop.gross_revenue * hotelSharePercent;
+      prop.our_revenue = prop.gross_revenue * (1 - hotelSharePercent);
       prop.hotel_outstanding = prop.hotel_expected - prop.hotel_received;
-      prop.nirvaana_outstanding = prop.nirvaana_expected - prop.nirvaana_received;
+      prop.our_outstanding = prop.our_revenue - prop.nirvaana_received;
     });
     
     setSalesReportData(Object.values(propertyData));
@@ -225,28 +334,39 @@ const AdminReports = ({ user, onLogout }) => {
 
   // Generate Expense Report
   const generateExpenseReport = () => {
-    const recurring = { salary: 0, living_cost: 0, total: 0 };
-    const adhoc = { marketing: 0, disposables: 0, oil_aromatics: 0, essentials: 0, bill_books: 0, other: 0, total: 0 };
+    // Group by property
+    const byProperty = {};
     
     expenses.forEach(exp => {
+      const propId = exp.property_id;
+      if (!byProperty[propId]) {
+        byProperty[propId] = {
+          property_name: propId,
+          recurring: { salary: 0, living_cost: 0, total: 0 },
+          adhoc: { marketing: 0, disposables: 0, oil_aromatics: 0, essentials: 0, bill_books: 0, other: 0, total: 0 }
+        };
+      }
+      
       if (exp.category === 'recurring') {
-        if (recurring[exp.expense_type] !== undefined) {
-          recurring[exp.expense_type] += exp.amount;
+        if (byProperty[propId].recurring[exp.expense_type] !== undefined) {
+          byProperty[propId].recurring[exp.expense_type] += exp.amount;
         }
-        recurring.total += exp.amount;
+        byProperty[propId].recurring.total += exp.amount;
       } else {
-        if (adhoc[exp.expense_type] !== undefined) {
-          adhoc[exp.expense_type] += exp.amount;
+        if (byProperty[propId].adhoc[exp.expense_type] !== undefined) {
+          byProperty[propId].adhoc[exp.expense_type] += exp.amount;
         }
-        adhoc.total += exp.amount;
+        byProperty[propId].adhoc.total += exp.amount;
       }
     });
     
-    setExpenseReportData({ recurring, adhoc, grandTotal: recurring.total + adhoc.total, expenses });
+    const grandTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
+    
+    setExpenseReportData({ byProperty: Object.values(byProperty), grandTotal, expenses });
     setExpenseReportDialog(true);
   };
 
-  // Generate P&L Report
+  // Generate P&L Report with correct formula
   const generatePnlReport = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -261,18 +381,61 @@ const AdminReports = ({ user, onLogout }) => {
       const allServices = allServicesRes.data;
       const allExpenses = allExpensesRes.data;
       
-      const cumulativeRevenue = allServices.reduce((sum, s) => sum + s.base_price, 0);
-      const cumulativeExpenses = allExpenses.reduce((sum, e) => sum + e.amount, 0);
-      const cumulativeProfit = cumulativeRevenue - cumulativeExpenses;
+      // Calculate cumulative using correct property-wise logic
+      const cumulativeByProperty = {};
       
-      // Current period
-      const periodRevenue = summary.totalBase;
-      const periodExpenses = summary.totalExpenses;
-      const periodProfit = periodRevenue - periodExpenses;
+      allServices.forEach(service => {
+        const propId = service.property_id;
+        if (!cumulativeByProperty[propId]) {
+          const hotelSharePercent = getPropertyShare(propId);
+          cumulativeByProperty[propId] = {
+            grossRevenue: 0,
+            hotelSharePercent,
+            expenses: 0
+          };
+        }
+        cumulativeByProperty[propId].grossRevenue += service.base_price;
+      });
+      
+      allExpenses.forEach(exp => {
+        if (cumulativeByProperty[exp.property_id]) {
+          cumulativeByProperty[exp.property_id].expenses += exp.amount;
+        }
+      });
+      
+      let cumulativeGross = 0;
+      let cumulativeHotelShare = 0;
+      let cumulativeOurRevenue = 0;
+      let cumulativeExpenses = 0;
+      let cumulativeProfit = 0;
+      
+      Object.values(cumulativeByProperty).forEach(stat => {
+        const hotelShare = stat.grossRevenue * (stat.hotelSharePercent / 100);
+        const ourRevenue = stat.grossRevenue - hotelShare;
+        const profit = ourRevenue - stat.expenses;
+        
+        cumulativeGross += stat.grossRevenue;
+        cumulativeHotelShare += hotelShare;
+        cumulativeOurRevenue += ourRevenue;
+        cumulativeExpenses += stat.expenses;
+        cumulativeProfit += profit;
+      });
       
       setPnlReportData({
-        period: { revenue: periodRevenue, expenses: periodExpenses, profit: periodProfit },
-        cumulative: { revenue: cumulativeRevenue, expenses: cumulativeExpenses, profit: cumulativeProfit }
+        period: {
+          grossRevenue: summary.grossRevenue,
+          hotelShare: summary.hotelShare,
+          ourRevenue: summary.ourRevenue,
+          expenses: summary.totalExpenses,
+          profit: summary.netProfit
+        },
+        cumulative: {
+          grossRevenue: cumulativeGross,
+          hotelShare: cumulativeHotelShare,
+          ourRevenue: cumulativeOurRevenue,
+          expenses: cumulativeExpenses,
+          profit: cumulativeProfit
+        }
       });
       setPnlReportDialog(true);
     } catch (error) {
@@ -282,11 +445,11 @@ const AdminReports = ({ user, onLogout }) => {
 
   // Download functions
   const downloadSalesReport = () => {
-    const headers = ['Property', 'Revenue Share %', 'Total Revenue', 'Base Sales', 'GST', 'Hotel Expected', 'Hotel Received', 'Hotel Outstanding', 'Nirvaana Expected', 'Nirvaana Received', 'Nirvaana Outstanding'];
+    const headers = ['Property', 'Hotel Share %', 'Gross Revenue', 'Hotel Expected', 'Hotel Received', 'Hotel Outstanding', 'Our Revenue', 'Our Received', 'Our Outstanding'];
     const rows = salesReportData.map(p => [
-      p.property_name, p.revenue_share, p.total_revenue, p.total_base, p.total_gst,
+      p.property_name, p.hotel_share_percent, p.gross_revenue.toFixed(2),
       p.hotel_expected.toFixed(2), p.hotel_received.toFixed(2), p.hotel_outstanding.toFixed(2),
-      p.nirvaana_expected.toFixed(2), p.nirvaana_received.toFixed(2), p.nirvaana_outstanding.toFixed(2)
+      p.our_revenue.toFixed(2), p.nirvaana_received.toFixed(2), p.our_outstanding.toFixed(2)
     ]);
     
     downloadCSV(headers, rows, 'sales-report');
@@ -304,9 +467,11 @@ const AdminReports = ({ user, onLogout }) => {
   const downloadPnlReport = () => {
     const headers = ['Metric', 'Current Period', 'Cumulative (All Time)'];
     const rows = [
-      ['Total Revenue', pnlReportData.period.revenue, pnlReportData.cumulative.revenue],
-      ['Total Expenses', pnlReportData.period.expenses, pnlReportData.cumulative.expenses],
-      ['Net Profit/Loss', pnlReportData.period.profit, pnlReportData.cumulative.profit]
+      ['Gross Revenue', pnlReportData.period.grossRevenue.toFixed(2), pnlReportData.cumulative.grossRevenue.toFixed(2)],
+      ['Hotel Share', pnlReportData.period.hotelShare.toFixed(2), pnlReportData.cumulative.hotelShare.toFixed(2)],
+      ['Our Revenue', pnlReportData.period.ourRevenue.toFixed(2), pnlReportData.cumulative.ourRevenue.toFixed(2)],
+      ['Expenses', pnlReportData.period.expenses.toFixed(2), pnlReportData.cumulative.expenses.toFixed(2)],
+      ['Net Profit/Loss', pnlReportData.period.profit.toFixed(2), pnlReportData.cumulative.profit.toFixed(2)]
     ];
     
     downloadCSV(headers, rows, 'profit-loss-report');
@@ -328,25 +493,8 @@ const AdminReports = ({ user, onLogout }) => {
     toast.success('Report downloaded!');
   };
 
-  // Chart data
-  const chartData = useMemo(() => {
-    const byProperty = {};
-    services.forEach(s => {
-      if (!byProperty[s.property_id]) {
-        byProperty[s.property_id] = { name: s.property_id, revenue: 0, expenses: 0 };
-      }
-      byProperty[s.property_id].revenue += s.base_price;
-    });
-    expenses.forEach(e => {
-      if (byProperty[e.property_id]) {
-        byProperty[e.property_id].expenses += e.amount;
-      }
-    });
-    return Object.values(byProperty);
-  }, [services, expenses]);
-
   const dateRange = getDateRange();
-  const hasActiveFilters = selectedProperties.length > 0 || selectedTherapists.length > 0;
+  const expenseDates = dateWiseData.filter(d => d.hasExpense);
 
   return (
     <div className="min-h-screen bg-background">
@@ -368,10 +516,10 @@ const AdminReports = ({ user, onLogout }) => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        {/* Filters */}
+        {/* Filters - Removed Therapists */}
         <div className="glass rounded-2xl p-6" data-testid="report-filters">
           <h3 className="text-lg font-serif text-foreground mb-4">Filters</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <Label className="mb-2 block text-sm">Year</Label>
               <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
@@ -409,25 +557,13 @@ const AdminReports = ({ user, onLogout }) => {
               </Select>
             </div>
             
-            <div className="col-span-2 md:col-span-1">
+            <div>
               <Label className="mb-2 block text-sm">Properties</Label>
-              <div className="border border-border rounded-lg p-2 max-h-24 overflow-y-auto">
+              <div className="border border-border rounded-lg p-2 max-h-28 overflow-y-auto">
                 {properties.map(p => (
                   <div key={p.id} className="flex items-center space-x-2 py-1">
                     <Checkbox checked={selectedProperties.includes(p.hotel_name)} onCheckedChange={() => toggleProperty(p.hotel_name)} />
-                    <span className="text-xs">{p.hotel_name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            <div className="col-span-2 md:col-span-1">
-              <Label className="mb-2 block text-sm">Therapists</Label>
-              <div className="border border-border rounded-lg p-2 max-h-24 overflow-y-auto">
-                {therapists.map(t => (
-                  <div key={t.user_id} className="flex items-center space-x-2 py-1">
-                    <Checkbox checked={selectedTherapists.includes(t.user_id)} onCheckedChange={() => toggleTherapist(t.user_id)} />
-                    <span className="text-xs">{t.full_name}</span>
+                    <span className="text-xs">{p.hotel_name} ({p.revenue_share_percentage}%)</span>
                   </div>
                 ))}
               </div>
@@ -441,59 +577,126 @@ const AdminReports = ({ user, onLogout }) => {
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="glass rounded-2xl p-5">
+        {/* Summary Cards with CORRECT calculations */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="glass rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-2">
-              <DollarSign className="w-5 h-5 text-primary" />
-              <span className="text-sm text-muted-foreground">Revenue</span>
+              <DollarSign className="w-4 h-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Gross Revenue</span>
             </div>
-            <p className="text-2xl font-medium">₹{summary.totalRevenue.toLocaleString()}</p>
+            <p className="text-xl font-medium">₹{summary.grossRevenue.toLocaleString()}</p>
           </div>
           
-          <div className="glass rounded-2xl p-5">
+          <div className="glass rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Receipt className="w-5 h-5 text-red-500" />
-              <span className="text-sm text-muted-foreground">Expenses</span>
+              <Building2 className="w-4 h-4 text-amber-600" />
+              <span className="text-xs text-muted-foreground">Hotel Share</span>
             </div>
-            <p className="text-2xl font-medium">₹{summary.totalExpenses.toLocaleString()}</p>
+            <p className="text-xl font-medium text-amber-600">₹{summary.hotelShare.toLocaleString()}</p>
           </div>
           
-          <div className="glass rounded-2xl p-5">
+          <div className="glass rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              <span className="text-xs text-muted-foreground">Our Revenue</span>
+            </div>
+            <p className="text-xl font-medium text-primary">₹{summary.ourRevenue.toLocaleString()}</p>
+          </div>
+          
+          <div className="glass rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Receipt className="w-4 h-4 text-red-500" />
+              <span className="text-xs text-muted-foreground">Expenses</span>
+            </div>
+            <p className="text-xl font-medium text-red-600">₹{summary.totalExpenses.toLocaleString()}</p>
+          </div>
+          
+          <div className="glass rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-2">
               {summary.netProfit >= 0 ? (
-                <TrendingUp className="w-5 h-5 text-green-500" />
+                <TrendingUp className="w-4 h-4 text-green-500" />
               ) : (
-                <TrendingDown className="w-5 h-5 text-red-500" />
+                <TrendingDown className="w-4 h-4 text-red-500" />
               )}
-              <span className="text-sm text-muted-foreground">Net Profit</span>
+              <span className="text-xs text-muted-foreground">Net Profit</span>
             </div>
-            <p className={`text-2xl font-medium ${summary.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <p className={`text-xl font-medium ${summary.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               ₹{Math.abs(summary.netProfit).toLocaleString()}
             </p>
           </div>
           
-          <div className="glass rounded-2xl p-5">
+          <div className="glass rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-2">
-              <FileText className="w-5 h-5 text-accent" />
-              <span className="text-sm text-muted-foreground">Transactions</span>
+              <FileText className="w-4 h-4 text-accent" />
+              <span className="text-xs text-muted-foreground">Transactions</span>
             </div>
-            <p className="text-2xl font-medium">{services.length}</p>
+            <p className="text-xl font-medium">{summary.transactionCount}</p>
           </div>
         </div>
 
-        {/* Chart */}
+        {/* Date-wise Revenue Line Chart with Expense Markers */}
+        {dateWiseData.length > 0 && (
+          <div className="glass rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-serif text-foreground">Date-wise Our Revenue</h3>
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <div className="w-3 h-0.5 bg-primary"></div> Revenue
+                </span>
+                <span className="flex items-center gap-1">
+                  <XIcon className="w-3 h-3 text-red-500" /> Expense recorded
+                </span>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={dateWiseData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  tick={{ fontSize: 10 }} 
+                  tickFormatter={(date) => new Date(date).getDate()}
+                />
+                <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `₹${v}`} />
+                <Tooltip 
+                  formatter={(value) => [`₹${value.toLocaleString()}`, 'Our Revenue']}
+                  labelFormatter={(label) => `Date: ${label}`}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="ourRevenue" 
+                  stroke="#B89D62" 
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+                {/* Expense markers */}
+                {expenseDates.map((d, idx) => (
+                  <ReferenceDot
+                    key={idx}
+                    x={d.date}
+                    y={d.ourRevenue}
+                    shape={<ExpenseMarker />}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Property Bar Chart with consistent data */}
         {chartData.length > 0 && (
           <div className="glass rounded-2xl p-6">
-            <h3 className="text-lg font-serif text-foreground mb-4">Revenue vs Expenses by Property</h3>
+            <h3 className="text-lg font-serif text-foreground mb-4">Our Revenue vs Expenses by Property</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${v}`} />
+                <Tooltip 
+                  formatter={(value, name) => [`₹${value.toLocaleString()}`, name]}
+                  labelFormatter={(label) => `Property: ${label}`}
+                />
                 <Legend />
-                <Bar dataKey="revenue" name="Revenue" fill="#B89D62" />
+                <Bar dataKey="ourRevenue" name="Our Revenue" fill="#B89D62" />
                 <Bar dataKey="expenses" name="Expenses" fill="#ef4444" />
               </BarChart>
             </ResponsiveContainer>
@@ -504,7 +707,6 @@ const AdminReports = ({ user, onLogout }) => {
         <div className="glass rounded-2xl p-6">
           <h3 className="text-lg font-serif text-foreground mb-4">Downloadable Reports</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Report 1: Sales */}
             <div 
               className="border border-border rounded-xl p-5 hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all"
               onClick={generateSalesReport}
@@ -517,10 +719,9 @@ const AdminReports = ({ user, onLogout }) => {
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </div>
               <h4 className="font-medium text-foreground mb-1">Sales Report</h4>
-              <p className="text-xs text-muted-foreground">Revenue breakdown, settlements & outstanding balances</p>
+              <p className="text-xs text-muted-foreground">Revenue split, settlements & outstanding</p>
             </div>
             
-            {/* Report 2: Expenses */}
             <div 
               className="border border-border rounded-xl p-5 hover:border-red-500/50 hover:bg-red-50 cursor-pointer transition-all"
               onClick={generateExpenseReport}
@@ -533,10 +734,9 @@ const AdminReports = ({ user, onLogout }) => {
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </div>
               <h4 className="font-medium text-foreground mb-1">Expense Report</h4>
-              <p className="text-xs text-muted-foreground">Fixed & variable costs breakdown</p>
+              <p className="text-xs text-muted-foreground">Fixed & variable costs by property</p>
             </div>
             
-            {/* Report 3: P&L */}
             <div 
               className="border border-border rounded-xl p-5 hover:border-green-500/50 hover:bg-green-50 cursor-pointer transition-all"
               onClick={generatePnlReport}
@@ -549,7 +749,7 @@ const AdminReports = ({ user, onLogout }) => {
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </div>
               <h4 className="font-medium text-foreground mb-1">Profit & Loss</h4>
-              <p className="text-xs text-muted-foreground">Monthly & cumulative P&L statement</p>
+              <p className="text-xs text-muted-foreground">Period & cumulative P&L statement</p>
             </div>
           </div>
         </div>
@@ -557,7 +757,7 @@ const AdminReports = ({ user, onLogout }) => {
 
       {/* Sales Report Dialog */}
       <Dialog open={salesReportDialog} onOpenChange={setSalesReportDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-serif text-xl">Sales Report</DialogTitle>
           </DialogHeader>
@@ -569,25 +769,29 @@ const AdminReports = ({ user, onLogout }) => {
                   <thead>
                     <tr className="border-b">
                       <th className="text-left py-2">Property</th>
-                      <th className="text-right py-2">Revenue</th>
+                      <th className="text-right py-2">Share %</th>
+                      <th className="text-right py-2">Gross Revenue</th>
                       <th className="text-right py-2">Hotel Expected</th>
                       <th className="text-right py-2">Hotel Received</th>
                       <th className="text-right py-2">Hotel Outstanding</th>
-                      <th className="text-right py-2">Nirvaana Outstanding</th>
+                      <th className="text-right py-2">Our Revenue</th>
+                      <th className="text-right py-2">Our Outstanding</th>
                     </tr>
                   </thead>
                   <tbody>
                     {salesReportData.map((p, i) => (
                       <tr key={i} className="border-b">
                         <td className="py-2">{p.property_name}</td>
-                        <td className="py-2 text-right">₹{p.total_revenue.toLocaleString()}</td>
+                        <td className="py-2 text-right">{p.hotel_share_percent}%</td>
+                        <td className="py-2 text-right">₹{p.gross_revenue.toLocaleString()}</td>
                         <td className="py-2 text-right">₹{p.hotel_expected.toFixed(0)}</td>
                         <td className="py-2 text-right">₹{p.hotel_received.toFixed(0)}</td>
                         <td className={`py-2 text-right font-medium ${p.hotel_outstanding > 0 ? 'text-red-600' : 'text-green-600'}`}>
                           ₹{Math.abs(p.hotel_outstanding).toFixed(0)}
                         </td>
-                        <td className={`py-2 text-right font-medium ${p.nirvaana_outstanding > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          ₹{Math.abs(p.nirvaana_outstanding).toFixed(0)}
+                        <td className="py-2 text-right text-primary font-medium">₹{p.our_revenue.toFixed(0)}</td>
+                        <td className={`py-2 text-right font-medium ${p.our_outstanding > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          ₹{Math.abs(p.our_outstanding).toFixed(0)}
                         </td>
                       </tr>
                     ))}
@@ -614,31 +818,34 @@ const AdminReports = ({ user, onLogout }) => {
           
           {expenseReportData && (
             <div className="mt-4 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="border rounded-lg p-4">
-                  <h4 className="font-medium mb-3">Recurring Costs</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between"><span>Salary</span><span>₹{expenseReportData.recurring.salary.toLocaleString()}</span></div>
-                    <div className="flex justify-between"><span>Living Cost</span><span>₹{expenseReportData.recurring.living_cost.toLocaleString()}</span></div>
-                    <div className="flex justify-between font-medium border-t pt-2"><span>Total</span><span>₹{expenseReportData.recurring.total.toLocaleString()}</span></div>
+              {expenseReportData.byProperty.map((prop, idx) => (
+                <div key={idx} className="border rounded-lg p-4">
+                  <h4 className="font-medium mb-3">{prop.property_name}</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground text-xs mb-2">Recurring</p>
+                      <div className="space-y-1">
+                        <div className="flex justify-between"><span>Salary</span><span>₹{prop.recurring.salary.toLocaleString()}</span></div>
+                        <div className="flex justify-between"><span>Living Cost</span><span>₹{prop.recurring.living_cost.toLocaleString()}</span></div>
+                        <div className="flex justify-between font-medium border-t pt-1"><span>Subtotal</span><span>₹{prop.recurring.total.toLocaleString()}</span></div>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs mb-2">Ad-hoc</p>
+                      <div className="space-y-1">
+                        <div className="flex justify-between"><span>Marketing</span><span>₹{prop.adhoc.marketing.toLocaleString()}</span></div>
+                        <div className="flex justify-between"><span>Disposables</span><span>₹{prop.adhoc.disposables.toLocaleString()}</span></div>
+                        <div className="flex justify-between"><span>Oil & Aromatics</span><span>₹{prop.adhoc.oil_aromatics.toLocaleString()}</span></div>
+                        <div className="flex justify-between font-medium border-t pt-1"><span>Subtotal</span><span>₹{prop.adhoc.total.toLocaleString()}</span></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="border rounded-lg p-4">
-                  <h4 className="font-medium mb-3">Ad-hoc Costs</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between"><span>Marketing</span><span>₹{expenseReportData.adhoc.marketing.toLocaleString()}</span></div>
-                    <div className="flex justify-between"><span>Disposables</span><span>₹{expenseReportData.adhoc.disposables.toLocaleString()}</span></div>
-                    <div className="flex justify-between"><span>Oil & Aromatics</span><span>₹{expenseReportData.adhoc.oil_aromatics.toLocaleString()}</span></div>
-                    <div className="flex justify-between"><span>Essentials</span><span>₹{expenseReportData.adhoc.essentials.toLocaleString()}</span></div>
-                    <div className="flex justify-between font-medium border-t pt-2"><span>Total</span><span>₹{expenseReportData.adhoc.total.toLocaleString()}</span></div>
-                  </div>
-                </div>
-              </div>
+              ))}
               
               <div className="bg-muted/30 rounded-lg p-4 text-center">
                 <p className="text-sm text-muted-foreground">Grand Total</p>
-                <p className="text-3xl font-medium">₹{expenseReportData.grandTotal.toLocaleString()}</p>
+                <p className="text-3xl font-medium text-red-600">₹{expenseReportData.grandTotal.toLocaleString()}</p>
               </div>
               
               <DialogFooter>
@@ -651,9 +858,9 @@ const AdminReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
-      {/* P&L Report Dialog */}
+      {/* P&L Report Dialog with correct formula */}
       <Dialog open={pnlReportDialog} onOpenChange={setPnlReportDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle className="font-serif text-xl">Profit & Loss Report</DialogTitle>
           </DialogHeader>
@@ -663,11 +870,25 @@ const AdminReports = ({ user, onLogout }) => {
               <div className="grid grid-cols-2 gap-6">
                 <div className="border rounded-lg p-5">
                   <h4 className="font-medium text-muted-foreground mb-4">Current Period</h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between"><span>Revenue</span><span className="font-medium">₹{pnlReportData.period.revenue.toLocaleString()}</span></div>
-                    <div className="flex justify-between"><span>Expenses</span><span className="font-medium text-red-600">₹{pnlReportData.period.expenses.toLocaleString()}</span></div>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span>Gross Revenue</span>
+                      <span className="font-medium">₹{pnlReportData.period.grossRevenue.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-amber-600">
+                      <span>– Hotel Share</span>
+                      <span className="font-medium">₹{pnlReportData.period.hotelShare.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-primary border-t pt-2">
+                      <span className="font-medium">= Our Revenue</span>
+                      <span className="font-medium">₹{pnlReportData.period.ourRevenue.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-red-600">
+                      <span>– Expenses</span>
+                      <span className="font-medium">₹{pnlReportData.period.expenses.toLocaleString()}</span>
+                    </div>
                     <div className="flex justify-between border-t pt-3">
-                      <span className="font-medium">Net P&L</span>
+                      <span className="font-bold">= Net Profit</span>
                       <span className={`font-bold text-lg ${pnlReportData.period.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {pnlReportData.period.profit >= 0 ? '+' : '-'}₹{Math.abs(pnlReportData.period.profit).toLocaleString()}
                       </span>
@@ -677,17 +898,37 @@ const AdminReports = ({ user, onLogout }) => {
                 
                 <div className="border-2 border-primary/30 rounded-lg p-5 bg-primary/5">
                   <h4 className="font-medium text-primary mb-4">Cumulative (All Time)</h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between"><span>Total Revenue</span><span className="font-medium">₹{pnlReportData.cumulative.revenue.toLocaleString()}</span></div>
-                    <div className="flex justify-between"><span>Total Expenses</span><span className="font-medium text-red-600">₹{pnlReportData.cumulative.expenses.toLocaleString()}</span></div>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span>Gross Revenue</span>
+                      <span className="font-medium">₹{pnlReportData.cumulative.grossRevenue.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-amber-600">
+                      <span>– Hotel Share</span>
+                      <span className="font-medium">₹{pnlReportData.cumulative.hotelShare.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-primary border-t pt-2">
+                      <span className="font-medium">= Our Revenue</span>
+                      <span className="font-medium">₹{pnlReportData.cumulative.ourRevenue.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-red-600">
+                      <span>– Expenses</span>
+                      <span className="font-medium">₹{pnlReportData.cumulative.expenses.toLocaleString()}</span>
+                    </div>
                     <div className="flex justify-between border-t pt-3">
-                      <span className="font-medium">Net P&L</span>
+                      <span className="font-bold">= Net Profit</span>
                       <span className={`font-bold text-xl ${pnlReportData.cumulative.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {pnlReportData.cumulative.profit >= 0 ? '+' : '-'}₹{Math.abs(pnlReportData.cumulative.profit).toLocaleString()}
                       </span>
                     </div>
                   </div>
                 </div>
+              </div>
+              
+              <div className="bg-muted/30 rounded-lg p-4 text-xs text-muted-foreground">
+                <p className="font-medium mb-1">Calculation Formula:</p>
+                <p>Net Profit = (Gross Revenue × Our Share %) – Expenses</p>
+                <p>Share percentages are property-specific and calculated per property before aggregation.</p>
               </div>
               
               <DialogFooter>
