@@ -1,0 +1,248 @@
+import React, { useState } from 'react';
+import axios from 'axios';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { ArrowLeft, User, Phone, Sparkles, DollarSign, Clock, CreditCard } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
+
+const therapyTypes = [
+  'Shirodhara',
+  'Hot Stone Massage',
+  'Reflexology',
+  'Foot Reflexology',
+  'Swedish Massage',
+  'Deep Tissue Massage',
+  'Aromatherapy',
+  'Custom Therapy'
+];
+
+const TherapistServiceEntry = ({ user, onLogout }) => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    customer_name: '',
+    customer_phone: '',
+    therapy_type: '',
+    therapy_duration: '',
+    base_price: '',
+    payment_received_by: '',
+    payment_mode: ''
+  });
+
+  const [calculatedAmounts, setCalculatedAmounts] = useState({
+    gst: 0,
+    total: 0
+  });
+
+  const handleBasePrice = (value) => {
+    const price = parseFloat(value) || 0;
+    const gst = price * 0.18;
+    const total = price + gst;
+    setCalculatedAmounts({ gst: gst.toFixed(2), total: total.toFixed(2) });
+    setFormData({ ...formData, base_price: value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const payload = {
+        ...formData,
+        base_price: parseFloat(formData.base_price)
+      };
+
+      await axios.post(`${API}/services`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      toast.success('Service entry created successfully! WhatsApp feedback message will be sent.');
+      navigate('/therapist');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to create service entry');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="bg-white/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link to="/therapist">
+              <Button variant="outline" size="sm" data-testid="back-button">
+                <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
+              </Button>
+            </Link>
+            <h1 className="text-2xl font-serif text-foreground">Add Service</h1>
+          </div>
+          <Button variant="outline" size="sm" onClick={onLogout}>
+            <ArrowLeft className="w-4 h-4 mr-2" strokeWidth={1.5} />
+            Logout
+          </Button>
+        </div>
+      </div>
+
+      <div className="max-w-3xl mx-auto px-4 py-6">
+        <form onSubmit={handleSubmit} className="glass rounded-2xl p-6 space-y-6" data-testid="service-entry-form">
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="customer_name">Customer Name</Label>
+              <div className="relative mt-2">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+                <Input
+                  id="customer_name"
+                  placeholder="Enter customer name"
+                  value={formData.customer_name}
+                  onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
+                  className="pl-11 h-12"
+                  required
+                  data-testid="customer-name-input"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="customer_phone">Customer Phone</Label>
+              <div className="relative mt-2">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+                <Input
+                  id="customer_phone"
+                  type="tel"
+                  placeholder="Enter phone number"
+                  value={formData.customer_phone}
+                  onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
+                  className="pl-11 h-12"
+                  required
+                  data-testid="customer-phone-input"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="therapy_type">Therapy Type</Label>
+              <Select
+                value={formData.therapy_type}
+                onValueChange={(value) => setFormData({ ...formData, therapy_type: value })}
+                required
+              >
+                <SelectTrigger className="h-12 mt-2" data-testid="therapy-type-select">
+                  <SelectValue placeholder="Select therapy" />
+                </SelectTrigger>
+                <SelectContent>
+                  {therapyTypes.map((type) => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="therapy_duration">Therapy Duration</Label>
+              <div className="relative mt-2">
+                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+                <Input
+                  id="therapy_duration"
+                  placeholder="e.g., 60 minutes"
+                  value={formData.therapy_duration}
+                  onChange={(e) => setFormData({ ...formData, therapy_duration: e.target.value })}
+                  className="pl-11 h-12"
+                  required
+                  data-testid="therapy-duration-input"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="base_price">Base Price (Excluding GST)</Label>
+              <div className="relative mt-2">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+                <Input
+                  id="base_price"
+                  type="number"
+                  step="0.01"
+                  placeholder="Enter amount"
+                  value={formData.base_price}
+                  onChange={(e) => handleBasePrice(e.target.value)}
+                  className="pl-11 h-12"
+                  required
+                  data-testid="base-price-input"
+                />
+              </div>
+            </div>
+
+            {formData.base_price && (
+              <div className="bg-muted/30 rounded-xl p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Base Price</span>
+                  <span className="text-foreground font-medium">₹{parseFloat(formData.base_price).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">GST (18%)</span>
+                  <span className="text-foreground font-medium">₹{calculatedAmounts.gst}</span>
+                </div>
+                <div className="flex justify-between text-base border-t border-border pt-2">
+                  <span className="text-foreground font-medium">Total Amount</span>
+                  <span className="text-primary font-medium text-lg">₹{calculatedAmounts.total}</span>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <Label htmlFor="payment_received_by">Payment Received By</Label>
+              <Select
+                value={formData.payment_received_by}
+                onValueChange={(value) => setFormData({ ...formData, payment_received_by: value })}
+                required
+              >
+                <SelectTrigger className="h-12 mt-2" data-testid="payment-receiver-select">
+                  <SelectValue placeholder="Select who received payment" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hotel">Hotel</SelectItem>
+                  <SelectItem value="nirvaana">Nirvaana Wellness</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="payment_mode">Payment Mode (Optional)</Label>
+              <Select
+                value={formData.payment_mode}
+                onValueChange={(value) => setFormData({ ...formData, payment_mode: value })}
+              >
+                <SelectTrigger className="h-12 mt-2" data-testid="payment-mode-select">
+                  <SelectValue placeholder="Select payment mode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="upi">UPI</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full h-12 rounded-full"
+            disabled={loading}
+            data-testid="submit-service-button"
+          >
+            {loading ? 'Submitting...' : 'Submit Service Entry'}
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default TherapistServiceEntry;
