@@ -445,12 +445,22 @@ const AdminReports = ({ user, onLogout }) => {
 
   // Download functions
   const downloadSalesReport = () => {
-    const headers = ['Property', 'Hotel Share %', 'Gross Revenue', 'Hotel Expected', 'Hotel Received', 'Hotel Outstanding', 'Our Revenue', 'Our Received', 'Our Outstanding'];
-    const rows = salesReportData.map(p => [
-      p.property_name, p.hotel_share_percent, p.gross_revenue.toFixed(2),
-      p.hotel_expected.toFixed(2), p.hotel_received.toFixed(2), p.hotel_outstanding.toFixed(2),
-      p.our_revenue.toFixed(2), p.nirvaana_received.toFixed(2), p.our_outstanding.toFixed(2)
-    ]);
+    const headers = ['Property', 'Hotel Share %', 'Gross Revenue', 'Hotel Expected', 'Hotel Received', 'Our Expected', 'Our Received', 'To Pay Hotel', 'To Pay Nirvaana'];
+    const rows = salesReportData.map(p => {
+      const toPayHotel = Math.max(0, p.hotel_expected - p.hotel_received);
+      const toPayNirvaana = Math.max(0, p.our_revenue - p.nirvaana_received);
+      return [
+        p.property_name, 
+        p.hotel_share_percent, 
+        p.gross_revenue.toFixed(2),
+        p.hotel_expected.toFixed(2), 
+        p.hotel_received.toFixed(2), 
+        p.our_revenue.toFixed(2), 
+        p.nirvaana_received.toFixed(2),
+        toPayHotel > 0 ? toPayHotel.toFixed(2) : 'NA',
+        toPayNirvaana > 0 ? toPayNirvaana.toFixed(2) : 'NA'
+      ];
+    });
     
     downloadCSV(headers, rows, 'sales-report');
   };
