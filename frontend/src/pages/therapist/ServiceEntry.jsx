@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, User, Phone, Sparkles, DollarSign, Clock, CreditCard } from 'lucide-react';
+import { ArrowLeft, User, Phone, Mail, Sparkles, DollarSign, Clock, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,6 +28,7 @@ const TherapistServiceEntry = ({ user, onLogout }) => {
   const [formData, setFormData] = useState({
     customer_name: '',
     customer_phone: '',
+    customer_email: '',
     therapy_type: '',
     therapy_duration: '',
     base_price: '',
@@ -56,14 +57,21 @@ const TherapistServiceEntry = ({ user, onLogout }) => {
       const token = localStorage.getItem('token');
       const payload = {
         ...formData,
-        base_price: parseFloat(formData.base_price)
+        base_price: parseFloat(formData.base_price),
+        customer_email: formData.customer_email || null
       };
 
-      await axios.post(`${API}/services`, payload, {
+      const response = await axios.post(`${API}/services`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      toast.success('Service entry created successfully! WhatsApp feedback message will be sent.');
+      if (response.data.feedback_email_status === 'sent') {
+        toast.success('Service entry created! Feedback email sent to customer.');
+      } else if (formData.customer_email) {
+        toast.success('Service entry created! (Email delivery pending)');
+      } else {
+        toast.success('Service entry created successfully!');
+      }
       navigate('/therapist');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to create service entry');
