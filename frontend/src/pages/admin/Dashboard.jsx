@@ -4,9 +4,13 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { 
   LayoutDashboard, Building2, Users, Package, FileText, Award, LogOut,
-  DollarSign, TrendingUp, UserCheck, Calendar
+  DollarSign, TrendingUp, UserCheck, Calendar, Filter, X, Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
