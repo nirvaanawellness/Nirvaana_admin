@@ -55,7 +55,7 @@ EMAIL_ENABLED=true
 EMAIL_PROVIDER=resend
 RESEND_API_KEY=re_your_api_key_here
 FROM_EMAIL=onboarding@resend.dev
-PORTAL_URL=https://wellness-erp-core.preview.emergentagent.com
+PORTAL_URL=https://operations-hub-beta.preview.emergentagent.com
 ```
 
 If you verified your own domain:
@@ -121,7 +121,7 @@ EMAIL_ENABLED=true
 EMAIL_PROVIDER=sendgrid
 SENDGRID_API_KEY=SG.your_api_key_here
 FROM_EMAIL=noreply@nirvaanawellness.com
-PORTAL_URL=https://wellness-erp-core.preview.emergentagent.com
+PORTAL_URL=https://operations-hub-beta.preview.emergentagent.com
 ```
 
 ---
