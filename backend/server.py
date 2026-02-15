@@ -116,6 +116,21 @@ async def update_property(property_id: str, property_data: PropertyCreate, curre
         raise HTTPException(status_code=404, detail="Property not found")
     return {"message": "Property updated successfully"}
 
+@api_router.delete("/properties/{property_id}")
+async def delete_property(property_id: str, current_user: dict = Depends(get_current_admin)):
+    from bson import ObjectId
+    
+    # Check if any therapists are assigned to this property
+    therapists_count = await db.therapists.count_documents({"assigned_property_id": property_id})
+    if therapists_count > 0:
+        raise HTTPException(status_code=400, detail=f"Cannot delete property. {therapists_count} therapists are still assigned to it.")
+    
+    result = await db.properties.delete_one({"_id": ObjectId(property_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Property not found")
+    
+    return {"message": "Property deleted successfully"}
+
 @api_router.post("/therapists")
 async def create_therapist(therapist_data: TherapistCreate, current_user: dict = Depends(get_current_admin)):
     existing = await db.users.find_one({"email": therapist_data.email})
