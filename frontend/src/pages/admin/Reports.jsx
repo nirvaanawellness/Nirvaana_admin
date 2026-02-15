@@ -398,12 +398,12 @@ const AdminReports = ({ user, onLogout }) => {
             
             <div>
               <Label className="mb-2 block text-sm">Quarter</Label>
-              <Select value={selectedQuarter} onValueChange={(v) => setSelectedQuarter(v)}>
+              <Select value={selectedQuarter || "none"} onValueChange={(v) => setSelectedQuarter(v === "none" ? "" : v)}>
                 <SelectTrigger data-testid="quarter-select">
                   <SelectValue placeholder="Optional" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {QUARTERS.map(q => <SelectItem key={q.value} value={q.value}>{q.label}</SelectItem>)}
                 </SelectContent>
               </Select>
