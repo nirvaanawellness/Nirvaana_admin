@@ -670,6 +670,64 @@ async def get_all_services(
     services = await db.services.find(query, {"_id": 0}).sort("created_at", -1).to_list(10000)
     return services
 
+@api_router.get("/customers")
+async def get_unique_customers(
+    current_user: dict = Depends(get_current_admin)
+):
+    """
+    Get unique customers by phone number, ordered by most recent first.
+    Includes service count and total spent for each customer.
+    """
+    
+    # Aggregation pipeline to get unique customers with stats
+    pipeline = [
+        # Sort by created_at descending to get latest service first
+        {"$sort": {"created_at": -1}},
+        
+        # Group by phone number (unique identifier)
+        {"$group": {
+            "_id": "$customer_phone",
+            "customer_name": {"$first": "$customer_name"},  # Most recent name
+            "customer_email": {"$first": "$customer_email"},  # Most recent email
+            "phone": {"$first": "$customer_phone"},
+            "total_services": {"$sum": 1},
+            "total_spent": {"$sum": "$total_amount"},
+            "total_base": {"$sum": "$base_price"},
+            "total_gst": {"$sum": "$gst_amount"},
+            "first_visit": {"$last": "$date"},  # Earliest date (last after desc sort)
+            "last_visit": {"$first": "$date"},  # Most recent date (first after desc sort)
+            "last_service_time": {"$first": "$created_at"},
+            "therapies": {"$addToSet": "$therapy_type"},
+            "properties_visited": {"$addToSet": "$property_id"}
+        }},
+        
+        # Sort by last service time (most recent customer first)
+        {"$sort": {"last_service_time": -1}},
+        
+        # Project the final output
+        {"$project": {
+            "_id": 0,
+            "customer_name": 1,
+            "customer_email": 1,
+            "phone": 1,
+            "total_services": 1,
+            "total_spent": {"$round": ["$total_spent", 2]},
+            "total_base": {"$round": ["$total_base", 2]},
+            "total_gst": {"$round": ["$total_gst", 2]},
+            "first_visit": 1,
+            "last_visit": 1,
+            "therapies": 1,
+            "properties_visited": 1
+        }}
+    ]
+    
+    customers = await db.services.aggregate(pipeline).to_list(10000)
+    
+    return {
+        "customers": customers,
+        "total_unique_customers": len(customers)
+    }
+
 @api_router.get("/incentives/my-incentive")
 async def get_my_incentive(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "therapist":
