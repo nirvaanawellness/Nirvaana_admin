@@ -1,0 +1,93 @@
+{
+  "summary": "Completed frontend testing of GST-separated financial reporting feature on Reports page. All 8 features tested successfully. Login, summary cards, Sales Report dialog, P&L Report dialog, charts, and Download Excel functionality all working correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Reports.jsx ESLint warnings",
+        "issues": ["React Hook useMemo/useEffect missing dependencies warnings - minor, not blocking functionality"]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_1.json",
+    "/app/test_reports/iteration_2.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A - Frontend only testing requested",
+    "frontend": "100% (8/8 features tested successfully)"
+  },
+  "test_credentials": {
+    "admin": {
+      "email": "admin@nirvaana.com",
+      "password": "admin123"
+    }
+  },
+  "seed_data_creation": "No seed data created - used existing test data (4 services across 2 properties with 1 expense of ₹5000)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "GST-separated financial reporting fully working. Reports page shows 7 summary cards (Base Revenue, GST Collected, Gross Revenue, Hotel Base Share, Our Base Share, Expenses, Net Profit). Sales Report dialog shows full GST breakdown with Revenue Breakdown, Hotel and Nirvaana columns, and Settlement. P&L Report shows Current Period and Cumulative with GST-aware calculation. Download Excel buttons work for both reports.",
+  "features_tested": {
+    "login": {
+      "admin_login": "PASS - admin@nirvaana.com / admin123 works correctly"
+    },
+    "reports_page_summary_cards": {
+      "base_revenue": "PASS - Shows ₹17,999.98 (Excl. GST)",
+      "gst_collected": "PASS - Shows ₹3,240 (18% GST)",
+      "gross_revenue": "PASS - Shows ₹21,239.98 (Incl. GST)",
+      "hotel_base_share": "PASS - Shows ₹9,249.99 (Per contract %)",
+      "our_base_share": "PASS - Shows ₹8,749.99 (Pre-expense)",
+      "expenses": "PASS - Shows ₹5,000",
+      "net_profit": "PASS - Shows ₹3,749.99 (Base Share - Exp)"
+    },
+    "sales_report_dialog": {
+      "gst_breakdown_columns": "PASS - Shows Base, GST, Gross, Base Exp, GST Liab, Total Exp, Received for Hotel and Nirvaana",
+      "settlement_column": "PASS - Shows settlement direction (→ Hotel/→ Us) with amounts",
+      "download_excel": "PASS - Download button works, toast shows 'Report downloaded!'"
+    },
+    "pnl_report_dialog": {
+      "current_period": "PASS - Shows Base Revenue, GST Collected, Gross Revenue, Hotel/Our Base Share, Expenses, Net Profit",
+      "cumulative": "PASS - Shows all-time cumulative figures",
+      "calculation_formula": "PASS - Shows GST-aware formula explanation",
+      "download_excel": "PASS - Download button works"
+    },
+    "charts": {
+      "date_wise_line_chart": "PASS - Shows 'Date-wise Our Base Share' with expense markers (red X)",
+      "property_bar_chart": "PASS - Shows 'Our Base Share vs Expenses by Property' bar chart"
+    },
+    "calculation_verification": {
+      "net_profit_formula": "PASS - Net Profit = Our Base Share (₹8,749.99) - Expenses (₹5,000) = ₹3,749.99",
+      "gst_excluded_from_profit": "PASS - GST (₹3,240) is NOT included in profit calculation"
+    }
+  },
+  "calculation_verification": {
+    "expected_values": {
+      "total_base_revenue": "₹17,999.98",
+      "gst": "₹3,240",
+      "hotel_base_share": "₹9,249.99",
+      "our_base_share": "₹8,749.99",
+      "expenses": "₹5,000",
+      "net_profit": "₹3,749.99"
+    },
+    "actual_values": {
+      "total_base_revenue": "₹17,999.98 ✅",
+      "gst": "₹3,240 ✅",
+      "hotel_base_share": "₹9,249.99 ✅",
+      "our_base_share": "₹8,749.99 ✅",
+      "expenses": "₹5,000 ✅",
+      "net_profit": "₹3,749.99 ✅"
+    },
+    "properties_tested": [
+      {"name": "Taj Palace Mumbai", "share_percent": "50%"},
+      {"name": "The Oberoi Udaipur", "share_percent": "55%"}
+    ]
+  }
+}
