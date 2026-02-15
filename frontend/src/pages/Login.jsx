@@ -30,16 +30,21 @@ const Login = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-      <div
-        className="lg:w-1/2 h-64 lg:h-screen bg-cover bg-center relative"
-        style={{
-          backgroundImage: "url('https://images.unsplash.com/photo-1741678095296-2b5cd407cc90?auto=format&fit=crop&q=80')"
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-br from-[#2C2420]/60 to-[#B89D62]/40"></div>
+      <div className="lg:w-1/2 h-64 lg:h-screen bg-gradient-to-br from-[#2C2420] via-[#3d3329] to-[#B89D62] relative flex items-center justify-center">
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: "url('https://customer-assets.emergentagent.com/job_wellness-erp-core/artifacts/fny25i7a_Logo.png')",
+          backgroundSize: '60%',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}></div>
+        <img 
+          src="https://customer-assets.emergentagent.com/job_wellness-erp-core/artifacts/fny25i7a_Logo.png" 
+          alt="Nirvaana Wellness"
+          className="relative z-10 w-3/4 max-w-md h-auto"
+        />
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-background">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
             <img 
