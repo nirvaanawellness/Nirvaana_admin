@@ -42,10 +42,11 @@ const Login = ({ onLogin }) => {
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-              <Sparkles className="w-8 h-8 text-primary" strokeWidth={1.5} />
-            </div>
-            <h1 className="text-4xl font-serif text-foreground mb-2">Nirvaana Wellness</h1>
+            <img 
+              src="https://customer-assets.emergentagent.com/job_wellness-erp-core/artifacts/fny25i7a_Logo.png" 
+              alt="Nirvaana Wellness"
+              className="w-48 h-auto mx-auto mb-6"
+            />
             <p className="text-muted-foreground">Internal Operations Portal</p>
           </div>
 
