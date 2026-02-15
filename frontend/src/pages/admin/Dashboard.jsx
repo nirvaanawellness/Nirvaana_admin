@@ -472,6 +472,20 @@ const AdminDashboard = ({ user, onLogout }) => {
               </div>
             </div>
           </Link>
+
+          <Link to="/admin/expenses">
+            <div className="glass rounded-2xl p-6 hover:shadow-float transition-all cursor-pointer" data-testid="expenses-nav">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <Receipt className="w-6 h-6 text-red-600" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-foreground">Expenses</h3>
+                  <p className="text-sm text-muted-foreground">Track costs</p>
+                </div>
+              </div>
+            </div>
+          </Link>
         </div>
       </div>
 
