@@ -224,6 +224,84 @@ A Premium Spa Brand by Sunrise Wellness"""
                 "message": str(e),
                 "status": "exception"
             }
+    
+    async def _send_via_sms(self, phone_number: str, customer_name: str, therapy_type: str, property_name: str, therapist_name: str = None) -> dict:
+        """Send message via SMS as backup (FREE option using Fast2SMS or MSG91)"""
+        
+        sms_api_key = os.getenv("SMS_API_KEY")
+        sms_sender_id = os.getenv("SMS_SENDER_ID", "NIRVNA")
+        
+        if not sms_api_key:
+            logger.warning("SMS API key not configured. Message not sent.")
+            return {
+                "success": False,
+                "message": "SMS not configured",
+                "status": "sms_disabled"
+            }
+        
+        try:
+            # Clean phone number (remove +91 for Indian SMS)
+            clean_number = phone_number.replace("+91", "").replace("+", "").replace(" ", "")
+            
+            # Shortened message for SMS (160 char limit)
+            therapist_line = f" by {therapist_name}" if therapist_name else ""
+            sms_text = f"Dear {customer_name}, Thank you for choosing Nirvaana Wellness! We hope you enjoyed your {therapy_type}{therapist_line}. Feedback: {self.feedback_url} Contact: +91-9520034538"
+            
+            # Using Fast2SMS (Indian provider - often has free tier)
+            url = "https://www.fast2sms.com/dev/bulkV2"
+            
+            headers = {
+                "authorization": sms_api_key,
+                "Content-Type": "application/json"
+            }
+            
+            payload = {
+                "sender_id": sms_sender_id,
+                "message": sms_text,
+                "route": "v3",
+                "numbers": clean_number
+            }
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    url,
+                    json=payload,
+                    headers=headers,
+                    timeout=10.0
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("return"):
+                        logger.info(f"SMS sent successfully to {clean_number}")
+                        return {
+                            "success": True,
+                            "message_id": data.get("message_id", [None])[0],
+                            "status": "sent_via_sms",
+                            "provider": "sms"
+                        }
+                    else:
+                        logger.error(f"SMS API error: {data.get('message')}")
+                        return {
+                            "success": False,
+                            "message": f"SMS error: {data.get('message')}",
+                            "status": "sms_failed"
+                        }
+                else:
+                    logger.error(f"SMS API error: {response.status_code} - {response.text}")
+                    return {
+                        "success": False,
+                        "message": f"SMS error: {response.status_code}",
+                        "status": "sms_failed"
+                    }
+                    
+        except Exception as e:
+            logger.error(f"Error sending SMS: {str(e)}")
+            return {
+                "success": False,
+                "message": str(e),
+                "status": "sms_exception"
+            }
 
 
 # Global instance
