@@ -1144,86 +1144,148 @@ const AdminReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
-      {/* P&L Report Dialog - GST-Aware Formula */}
+      {/* P&L Report Dialog - Three Segments: Selection, Current Period, All Time */}
       <Dialog open={pnlReportDialog} onOpenChange={setPnlReportDialog}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-serif text-xl">Profit & Loss Report - GST Separated</DialogTitle>
           </DialogHeader>
           
           {pnlReportData && (
             <div className="mt-4 space-y-6">
-              <div className="grid grid-cols-2 gap-6">
-                {/* Current Period */}
-                <div className="border rounded-lg p-5">
-                  <h4 className="font-medium text-muted-foreground mb-4">Current Period</h4>
-                  <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                {/* Segment 1: Selection Based */}
+                <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50/30">
+                  <div className="mb-3">
+                    <h4 className="font-semibold text-blue-700">Selection Based</h4>
+                    <p className="text-xs text-muted-foreground">{pnlReportData.selection.label}</p>
+                    <p className="text-[10px] text-muted-foreground">{pnlReportData.selection.dateRange}</p>
+                    <p className="text-[10px] text-muted-foreground">{pnlReportData.selection.properties}</p>
+                  </div>
+                  <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span>Base Revenue (Excl. GST)</span>
-                      <span className="font-medium">₹{pnlReportData.period.baseRevenue.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Base Revenue</span>
+                      <span className="font-medium">₹{pnlReportData.selection.baseRevenue.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-blue-600">
-                      <span>GST Collected (18%)</span>
-                      <span className="font-medium">₹{pnlReportData.period.gstCollected.toLocaleString()}</span>
+                      <span>GST (18%)</span>
+                      <span className="font-medium">₹{pnlReportData.selection.gstCollected.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between border-t pt-2">
-                      <span>Gross Revenue (Incl. GST)</span>
-                      <span className="font-medium">₹{pnlReportData.period.grossRevenue.toLocaleString()}</span>
+                    <div className="flex justify-between border-t pt-1">
+                      <span className="text-muted-foreground">Gross Revenue</span>
+                      <span className="font-medium">₹{pnlReportData.selection.grossRevenue.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-amber-600 border-t pt-2">
-                      <span>Hotel Base Share</span>
-                      <span className="font-medium">₹{pnlReportData.period.hotelBaseShare.toLocaleString()}</span>
+                    <div className="flex justify-between text-amber-600 border-t pt-1">
+                      <span>Hotel Share</span>
+                      <span className="font-medium">₹{pnlReportData.selection.hotelBaseShare.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-primary">
-                      <span className="font-medium">Our Base Share</span>
-                      <span className="font-medium">₹{pnlReportData.period.ourBaseShare.toLocaleString()}</span>
+                      <span>Our Share</span>
+                      <span className="font-medium">₹{pnlReportData.selection.ourBaseShare.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-red-600 border-t pt-2">
+                    <div className="flex justify-between text-red-600 border-t pt-1">
                       <span>− Expenses</span>
-                      <span className="font-medium">₹{pnlReportData.period.expenses.toLocaleString()}</span>
+                      <span className="font-medium">₹{pnlReportData.selection.expenses.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between border-t-2 pt-3">
-                      <span className="font-bold">= Net Profit</span>
-                      <span className={`font-bold text-lg ${pnlReportData.period.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {pnlReportData.period.profit >= 0 ? '+' : '-'}₹{Math.abs(pnlReportData.period.profit).toLocaleString()}
+                    <div className="flex justify-between border-t-2 pt-2">
+                      <span className="font-bold">Net Profit</span>
+                      <span className={`font-bold text-lg ${pnlReportData.selection.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {pnlReportData.selection.profit >= 0 ? '+' : '-'}₹{Math.abs(pnlReportData.selection.profit).toLocaleString()}
                       </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground text-center pt-1">
+                      {pnlReportData.selection.serviceCount} transactions
                     </div>
                   </div>
                 </div>
                 
-                {/* Cumulative */}
-                <div className="border-2 border-primary/30 rounded-lg p-5 bg-primary/5">
-                  <h4 className="font-medium text-primary mb-4">Cumulative (All Time)</h4>
-                  <div className="space-y-3 text-sm">
+                {/* Segment 2: Current Period (This Month) */}
+                <div className="border-2 border-amber-200 rounded-lg p-4 bg-amber-50/30">
+                  <div className="mb-3">
+                    <h4 className="font-semibold text-amber-700">Current Period</h4>
+                    <p className="text-xs text-muted-foreground">{pnlReportData.currentPeriod.label}</p>
+                    <p className="text-[10px] text-muted-foreground">{pnlReportData.currentPeriod.dateRange}</p>
+                    <p className="text-[10px] text-muted-foreground">All Properties</p>
+                  </div>
+                  <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span>Base Revenue (Excl. GST)</span>
-                      <span className="font-medium">₹{pnlReportData.cumulative.baseRevenue.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Base Revenue</span>
+                      <span className="font-medium">₹{pnlReportData.currentPeriod.baseRevenue.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-blue-600">
-                      <span>GST Collected (18%)</span>
-                      <span className="font-medium">₹{pnlReportData.cumulative.gstCollected.toLocaleString()}</span>
+                      <span>GST (18%)</span>
+                      <span className="font-medium">₹{pnlReportData.currentPeriod.gstCollected.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between border-t pt-2">
-                      <span>Gross Revenue (Incl. GST)</span>
-                      <span className="font-medium">₹{pnlReportData.cumulative.grossRevenue.toLocaleString()}</span>
+                    <div className="flex justify-between border-t pt-1">
+                      <span className="text-muted-foreground">Gross Revenue</span>
+                      <span className="font-medium">₹{pnlReportData.currentPeriod.grossRevenue.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-amber-600 border-t pt-2">
-                      <span>Hotel Base Share</span>
-                      <span className="font-medium">₹{pnlReportData.cumulative.hotelBaseShare.toLocaleString()}</span>
+                    <div className="flex justify-between text-amber-600 border-t pt-1">
+                      <span>Hotel Share</span>
+                      <span className="font-medium">₹{pnlReportData.currentPeriod.hotelBaseShare.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-primary">
-                      <span className="font-medium">Our Base Share</span>
-                      <span className="font-medium">₹{pnlReportData.cumulative.ourBaseShare.toLocaleString()}</span>
+                      <span>Our Share</span>
+                      <span className="font-medium">₹{pnlReportData.currentPeriod.ourBaseShare.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-red-600 border-t pt-2">
+                    <div className="flex justify-between text-red-600 border-t pt-1">
                       <span>− Expenses</span>
-                      <span className="font-medium">₹{pnlReportData.cumulative.expenses.toLocaleString()}</span>
+                      <span className="font-medium">₹{pnlReportData.currentPeriod.expenses.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between border-t-2 pt-3">
-                      <span className="font-bold">= Net Profit</span>
-                      <span className={`font-bold text-xl ${pnlReportData.cumulative.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {pnlReportData.cumulative.profit >= 0 ? '+' : '-'}₹{Math.abs(pnlReportData.cumulative.profit).toLocaleString()}
+                    <div className="flex justify-between border-t-2 pt-2">
+                      <span className="font-bold">Net Profit</span>
+                      <span className={`font-bold text-lg ${pnlReportData.currentPeriod.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {pnlReportData.currentPeriod.profit >= 0 ? '+' : '-'}₹{Math.abs(pnlReportData.currentPeriod.profit).toLocaleString()}
                       </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground text-center pt-1">
+                      {pnlReportData.currentPeriod.serviceCount} transactions
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Segment 3: All Time */}
+                <div className="border-2 border-primary/30 rounded-lg p-4 bg-primary/5">
+                  <div className="mb-3">
+                    <h4 className="font-semibold text-primary">All Time</h4>
+                    <p className="text-xs text-muted-foreground">{pnlReportData.allTime.label}</p>
+                    <p className="text-[10px] text-muted-foreground">{pnlReportData.allTime.dateRange}</p>
+                    <p className="text-[10px] text-muted-foreground">All Properties</p>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Base Revenue</span>
+                      <span className="font-medium">₹{pnlReportData.allTime.baseRevenue.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-blue-600">
+                      <span>GST (18%)</span>
+                      <span className="font-medium">₹{pnlReportData.allTime.gstCollected.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-1">
+                      <span className="text-muted-foreground">Gross Revenue</span>
+                      <span className="font-medium">₹{pnlReportData.allTime.grossRevenue.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-amber-600 border-t pt-1">
+                      <span>Hotel Share</span>
+                      <span className="font-medium">₹{pnlReportData.allTime.hotelBaseShare.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-primary">
+                      <span>Our Share</span>
+                      <span className="font-medium">₹{pnlReportData.allTime.ourBaseShare.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-red-600 border-t pt-1">
+                      <span>− Expenses</span>
+                      <span className="font-medium">₹{pnlReportData.allTime.expenses.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between border-t-2 pt-2">
+                      <span className="font-bold">Net Profit</span>
+                      <span className={`font-bold text-xl ${pnlReportData.allTime.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {pnlReportData.allTime.profit >= 0 ? '+' : '-'}₹{Math.abs(pnlReportData.allTime.profit).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground text-center pt-1">
+                      {pnlReportData.allTime.serviceCount} transactions
                     </div>
                   </div>
                 </div>
