@@ -62,9 +62,11 @@ Build a secure, scalable, mobile-first internal operations management applicatio
 - Detailed explanation section
 - Download Excel functionality
 
-**P&L Report Dialog - GST-Aware**:
-- Current Period & Cumulative (All Time)
-- Shows: Base Revenue, GST Collected, Gross Revenue, Hotel/Our Base Share, Expenses, Net Profit
+**P&L Report Dialog - Three Segments (GST-Aware)**:
+- **Segment 1: Selection Based** - Based on current filters (Year, Month, Quarter, Property)
+- **Segment 2: Current Period** - Current month only (1st to today)
+- **Segment 3: All Time** - Cumulative since business started
+- Each segment shows: Base Revenue, GST, Gross Revenue, Hotel/Our Share, Expenses, Net Profit, Transaction count
 - Formula explanation with GST-awareness note
 - Download Excel functionality
 
