@@ -482,76 +482,117 @@ const AdminReports = ({ user, onLogout }) => {
   };
 
   /**
-   * GENERATE P&L REPORT WITH CORRECT GST-AWARE FORMULA
+   * GENERATE P&L REPORT WITH THREE SEGMENTS:
+   * 1. Selection Based - Based on current filters (Year, Month, Quarter, Property)
+   * 2. Current Period - Current month only (1st to today)
+   * 3. All Time - Cumulative since business started
    * 
-   * Profit = Our BASE Share - Expenses
-   * GST is NOT included in profit calculation
+   * Profit = Our BASE Share - Expenses (GST excluded)
    */
   const generatePnlReport = async () => {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      // Fetch all-time data for cumulative
-      const [allServicesRes, allExpensesRes] = await Promise.all([
+      // Get current month date range
+      const today = new Date();
+      const currentMonthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+      const currentMonthEnd = today.toISOString().split('T')[0];
+      
+      // Fetch all data
+      const [allServicesRes, allExpensesRes, currentMonthServicesRes, currentMonthExpensesRes] = await Promise.all([
         axios.get(`${API}/services`, { headers }),
-        axios.get(`${API}/expenses`, { headers })
+        axios.get(`${API}/expenses`, { headers }),
+        axios.get(`${API}/services?date_from=${currentMonthStart}&date_to=${currentMonthEnd}`, { headers }),
+        axios.get(`${API}/expenses?date_from=${currentMonthStart}&date_to=${currentMonthEnd}`, { headers })
       ]);
       
       const allServices = allServicesRes.data;
       const allExpenses = allExpensesRes.data;
+      const currentMonthServices = currentMonthServicesRes.data;
+      const currentMonthExpenses = currentMonthExpensesRes.data;
       
-      // Calculate cumulative using GST-aware logic
-      const cumulativeByProperty = {};
-      
-      allServices.forEach(service => {
-        const propId = service.property_id;
-        if (!cumulativeByProperty[propId]) {
-          cumulativeByProperty[propId] = [];
-        }
-        cumulativeByProperty[propId].push(service);
-      });
-      
-      let cumulativeBaseRevenue = 0;
-      let cumulativeGstCollected = 0;
-      let cumulativeGrossRevenue = 0;
-      let cumulativeHotelBaseShare = 0;
-      let cumulativeNirvaanaBaseShare = 0;
-      let cumulativeExpenses = allExpenses.reduce((sum, e) => sum + e.amount, 0);
-      
-      Object.entries(cumulativeByProperty).forEach(([propId, propServices]) => {
-        const hotelSharePercent = getPropertyShare(propId);
-        const settlement = calculateGSTAwareSettlement(propServices, hotelSharePercent);
+      // Helper function to calculate P&L for a set of services/expenses
+      const calculatePnL = (servicesData, expensesData) => {
+        const byProperty = {};
         
-        cumulativeBaseRevenue += settlement.baseRevenue;
-        cumulativeGstCollected += settlement.gstCollected;
-        cumulativeGrossRevenue += settlement.grossRevenue;
-        cumulativeHotelBaseShare += settlement.hotelBaseShare;
-        cumulativeNirvaanaBaseShare += settlement.nirvaanaBaseShare;
-      });
+        servicesData.forEach(service => {
+          const propId = service.property_id;
+          if (!byProperty[propId]) {
+            byProperty[propId] = [];
+          }
+          byProperty[propId].push(service);
+        });
+        
+        let baseRevenue = 0;
+        let gstCollected = 0;
+        let grossRevenue = 0;
+        let hotelBaseShare = 0;
+        let nirvaanaBaseShare = 0;
+        
+        Object.entries(byProperty).forEach(([propId, propServices]) => {
+          const hotelSharePercent = getPropertyShare(propId);
+          const settlement = calculateGSTAwareSettlement(propServices, hotelSharePercent);
+          
+          baseRevenue += settlement.baseRevenue;
+          gstCollected += settlement.gstCollected;
+          grossRevenue += settlement.grossRevenue;
+          hotelBaseShare += settlement.hotelBaseShare;
+          nirvaanaBaseShare += settlement.nirvaanaBaseShare;
+        });
+        
+        const totalExpenses = expensesData.reduce((sum, e) => sum + e.amount, 0);
+        const profit = nirvaanaBaseShare - totalExpenses;
+        
+        return {
+          baseRevenue,
+          gstCollected,
+          grossRevenue,
+          hotelBaseShare,
+          ourBaseShare: nirvaanaBaseShare,
+          expenses: totalExpenses,
+          profit,
+          serviceCount: servicesData.length
+        };
+      };
       
-      // Profit = Our Base Share - Expenses (GST excluded)
-      const cumulativeProfit = cumulativeNirvaanaBaseShare - cumulativeExpenses;
-      const periodProfit = summary.nirvaanaBaseShare - summary.totalExpenses;
+      // Calculate for all three segments
+      const selectionPnL = {
+        baseRevenue: summary.baseRevenue,
+        gstCollected: summary.gstCollected,
+        grossRevenue: summary.grossRevenue,
+        hotelBaseShare: summary.hotelBaseShare,
+        ourBaseShare: summary.nirvaanaBaseShare,
+        expenses: summary.totalExpenses,
+        profit: summary.nirvaanaBaseShare - summary.totalExpenses,
+        serviceCount: summary.transactionCount
+      };
+      
+      const currentPeriodPnL = calculatePnL(currentMonthServices, currentMonthExpenses);
+      const allTimePnL = calculatePnL(allServices, allExpenses);
+      
+      // Get the date range label for selection
+      const { from, to } = getDateRange();
+      const selectionLabel = selectedQuarter 
+        ? `${selectedQuarter} ${selectedYear}`
+        : `${MONTHS.find(m => m.value === selectedMonth)?.label} ${selectedYear}`;
       
       setPnlReportData({
-        period: {
-          baseRevenue: summary.baseRevenue,
-          gstCollected: summary.gstCollected,
-          grossRevenue: summary.grossRevenue,
-          hotelBaseShare: summary.hotelBaseShare,
-          ourBaseShare: summary.nirvaanaBaseShare,
-          expenses: summary.totalExpenses,
-          profit: periodProfit
+        selection: {
+          ...selectionPnL,
+          label: selectionLabel,
+          dateRange: `${from} to ${to}`,
+          properties: selectedProperties.length > 0 ? selectedProperties.join(', ') : 'All Properties'
         },
-        cumulative: {
-          baseRevenue: cumulativeBaseRevenue,
-          gstCollected: cumulativeGstCollected,
-          grossRevenue: cumulativeGrossRevenue,
-          hotelBaseShare: cumulativeHotelBaseShare,
-          ourBaseShare: cumulativeNirvaanaBaseShare,
-          expenses: cumulativeExpenses,
-          profit: cumulativeProfit
+        currentPeriod: {
+          ...currentPeriodPnL,
+          label: `${MONTHS.find(m => m.value === today.getMonth() + 1)?.label} ${today.getFullYear()}`,
+          dateRange: `${currentMonthStart} to ${currentMonthEnd}`
+        },
+        allTime: {
+          ...allTimePnL,
+          label: 'All Time',
+          dateRange: 'Since business started'
         }
       });
       setPnlReportDialog(true);
