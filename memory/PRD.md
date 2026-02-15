@@ -38,16 +38,38 @@ Build a secure, scalable, mobile-first internal operations management applicatio
   - Dynamic date range labels on pie chart
   - Clickable stat cards with detail dialogs
   
-- **Reports Module Complete Overhaul**:
+- **Reports Module Complete Overhaul** (Updated with Correct Business Logic):
   - Renamed from "Revenue Reports" to "Reports"
-  - Comprehensive filters: Year, Month, Quarter, Property (multi), Therapist (multi)
-  - Current month defaults to 1st to today
-  - Revenue vs Expenses bar chart by property
-  - Three downloadable report boxes:
-    1. Sales Report - Revenue breakdown, settlements, outstanding balances
-    2. Expense Report - Fixed & variable costs breakdown
-    3. P&L Report - Period and cumulative profit/loss
-  - Excel download for all reports
+  - Filters: Year, Month, Quarter, Property (multi) - **Therapists filter removed**
+  - Properties display share percentage (e.g., "Taj Palace Mumbai (50%)")
+  - **Correct Profit Calculation Formula**:
+    ```
+    Net Profit = (Gross Revenue × Our Share %) – Expenses
+    ```
+  - Property-wise calculation BEFORE aggregation
+  - Dynamic share % fetched from property settings
+  
+  **New Summary Cards**:
+  - Gross Revenue (total bookings)
+  - Hotel Share (calculated per property %)
+  - Our Revenue (Gross - Hotel Share)
+  - Expenses
+  - Net Profit (Our Revenue - Expenses)
+  - Transactions count
+
+  **New Date-wise Line Graph**:
+  - Shows "Our Revenue" per date
+  - Red X markers on dates with expenses
+  - Respects property and date filters
+  
+  **Property Bar Chart**:
+  - Shows "Our Revenue vs Expenses" per property
+  - Tooltip shows consistent values (fixed mismatch bug)
+  
+  **Three Downloadable Reports**:
+  1. Sales Report - Revenue split by property share %, settlements & outstanding
+  2. Expense Report - Fixed & variable costs grouped by property
+  3. P&L Report - Shows calculation breakdown with formula explanation
 
 - **Expense Tracking System**:
   - CRUD API endpoints for expenses
