@@ -721,30 +721,51 @@ const AdminReports = ({ user, onLogout }) => {
           </div>
         </div>
 
-        {/* Summary Cards with CORRECT calculations */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {/* Summary Cards with GST-AWARE calculations */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
           <div className="glass rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <DollarSign className="w-4 h-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Base Revenue</span>
+            </div>
+            <p className="text-xl font-medium">₹{summary.baseRevenue.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground mt-1">Excl. GST</p>
+          </div>
+          
+          <div className="glass rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Receipt className="w-4 h-4 text-blue-500" />
+              <span className="text-xs text-muted-foreground">GST Collected</span>
+            </div>
+            <p className="text-xl font-medium text-blue-600">₹{summary.gstCollected.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground mt-1">18% GST</p>
+          </div>
+          
+          <div className="glass rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="w-4 h-4 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">Gross Revenue</span>
             </div>
             <p className="text-xl font-medium">₹{summary.grossRevenue.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground mt-1">Incl. GST</p>
           </div>
           
           <div className="glass rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <Building2 className="w-4 h-4 text-amber-600" />
-              <span className="text-xs text-muted-foreground">Hotel Share</span>
+              <span className="text-xs text-muted-foreground">Hotel Base Share</span>
             </div>
-            <p className="text-xl font-medium text-amber-600">₹{summary.hotelShare.toLocaleString()}</p>
+            <p className="text-xl font-medium text-amber-600">₹{summary.hotelBaseShare.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground mt-1">Per contract %</p>
           </div>
           
           <div className="glass rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-4 h-4 text-primary" />
-              <span className="text-xs text-muted-foreground">Our Revenue</span>
+              <span className="text-xs text-muted-foreground">Our Base Share</span>
             </div>
-            <p className="text-xl font-medium text-primary">₹{summary.ourRevenue.toLocaleString()}</p>
+            <p className="text-xl font-medium text-primary">₹{summary.nirvaanaBaseShare.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground mt-1">Pre-expense</p>
           </div>
           
           <div className="glass rounded-2xl p-4">
@@ -755,7 +776,7 @@ const AdminReports = ({ user, onLogout }) => {
             <p className="text-xl font-medium text-red-600">₹{summary.totalExpenses.toLocaleString()}</p>
           </div>
           
-          <div className="glass rounded-2xl p-4">
+          <div className="glass rounded-2xl p-4 border-2 border-primary/30">
             <div className="flex items-center gap-2 mb-2">
               {summary.netProfit >= 0 ? (
                 <TrendingUp className="w-4 h-4 text-green-500" />
@@ -767,14 +788,19 @@ const AdminReports = ({ user, onLogout }) => {
             <p className={`text-xl font-medium ${summary.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               ₹{Math.abs(summary.netProfit).toLocaleString()}
             </p>
+            <p className="text-xs text-muted-foreground mt-1">Base Share - Exp</p>
           </div>
-          
-          <div className="glass rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <FileText className="w-4 h-4 text-accent" />
-              <span className="text-xs text-muted-foreground">Transactions</span>
-            </div>
-            <p className="text-xl font-medium">{summary.transactionCount}</p>
+        </div>
+        
+        {/* Profit Formula Explanation */}
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-start gap-3">
+          <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-foreground mb-1">Calculation Logic</p>
+            <p className="text-muted-foreground">
+              Revenue share % is applied on <strong>Base Amount only</strong> (excluding GST). 
+              Net Profit = Our Base Share − Expenses. GST is tracked separately and settled proportionately.
+            </p>
           </div>
         </div>
 
