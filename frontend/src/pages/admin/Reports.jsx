@@ -648,15 +648,19 @@ const AdminReports = ({ user, onLogout }) => {
   };
 
   const downloadPnlReport = () => {
-    const headers = ['Metric', 'Current Period', 'Cumulative (All Time)'];
+    const headers = ['Metric', 'Selection Based', 'Current Period', 'All Time'];
     const rows = [
-      ['Base Revenue (Excl. GST)', pnlReportData.period.baseRevenue.toFixed(2), pnlReportData.cumulative.baseRevenue.toFixed(2)],
-      ['GST Collected', pnlReportData.period.gstCollected.toFixed(2), pnlReportData.cumulative.gstCollected.toFixed(2)],
-      ['Gross Revenue (Incl. GST)', pnlReportData.period.grossRevenue.toFixed(2), pnlReportData.cumulative.grossRevenue.toFixed(2)],
-      ['Hotel Base Share', pnlReportData.period.hotelBaseShare.toFixed(2), pnlReportData.cumulative.hotelBaseShare.toFixed(2)],
-      ['Our Base Share', pnlReportData.period.ourBaseShare.toFixed(2), pnlReportData.cumulative.ourBaseShare.toFixed(2)],
-      ['Expenses', pnlReportData.period.expenses.toFixed(2), pnlReportData.cumulative.expenses.toFixed(2)],
-      ['Net Profit (Our Base Share - Expenses)', pnlReportData.period.profit.toFixed(2), pnlReportData.cumulative.profit.toFixed(2)]
+      ['Period', pnlReportData.selection.label, pnlReportData.currentPeriod.label, pnlReportData.allTime.label],
+      ['Date Range', pnlReportData.selection.dateRange, pnlReportData.currentPeriod.dateRange, pnlReportData.allTime.dateRange],
+      ['Properties', pnlReportData.selection.properties, 'All Properties', 'All Properties'],
+      ['Transactions', pnlReportData.selection.serviceCount, pnlReportData.currentPeriod.serviceCount, pnlReportData.allTime.serviceCount],
+      ['Base Revenue (Excl. GST)', pnlReportData.selection.baseRevenue.toFixed(2), pnlReportData.currentPeriod.baseRevenue.toFixed(2), pnlReportData.allTime.baseRevenue.toFixed(2)],
+      ['GST Collected', pnlReportData.selection.gstCollected.toFixed(2), pnlReportData.currentPeriod.gstCollected.toFixed(2), pnlReportData.allTime.gstCollected.toFixed(2)],
+      ['Gross Revenue (Incl. GST)', pnlReportData.selection.grossRevenue.toFixed(2), pnlReportData.currentPeriod.grossRevenue.toFixed(2), pnlReportData.allTime.grossRevenue.toFixed(2)],
+      ['Hotel Base Share', pnlReportData.selection.hotelBaseShare.toFixed(2), pnlReportData.currentPeriod.hotelBaseShare.toFixed(2), pnlReportData.allTime.hotelBaseShare.toFixed(2)],
+      ['Our Base Share', pnlReportData.selection.ourBaseShare.toFixed(2), pnlReportData.currentPeriod.ourBaseShare.toFixed(2), pnlReportData.allTime.ourBaseShare.toFixed(2)],
+      ['Expenses', pnlReportData.selection.expenses.toFixed(2), pnlReportData.currentPeriod.expenses.toFixed(2), pnlReportData.allTime.expenses.toFixed(2)],
+      ['Net Profit (Our Base Share - Expenses)', pnlReportData.selection.profit.toFixed(2), pnlReportData.currentPeriod.profit.toFixed(2), pnlReportData.allTime.profit.toFixed(2)]
     ];
     
     downloadCSV(headers, rows, 'profit-loss-report');
