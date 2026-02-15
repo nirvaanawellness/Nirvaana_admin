@@ -95,6 +95,19 @@ const AdminTherapists = ({ user, onLogout }) => {
     }
   };
 
+  const handleDelete = async (therapistId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API}/therapists/${therapistId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Therapist removed successfully');
+      fetchTherapists();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to remove therapist');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="bg-white/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-10">
