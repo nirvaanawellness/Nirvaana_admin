@@ -1205,19 +1205,6 @@ const AdminReports = ({ user, onLogout }) => {
           )}
         </DialogContent>
       </Dialog>
-                <p>Net Profit = (Gross Revenue × Our Share %) – Expenses</p>
-                <p>Share percentages are property-specific and calculated per property before aggregation.</p>
-              </div>
-              
-              <DialogFooter>
-                <Button onClick={downloadPnlReport}>
-                  <Download className="w-4 h-4 mr-2" /> Download Excel
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
