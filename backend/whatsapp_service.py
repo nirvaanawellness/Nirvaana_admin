@@ -90,19 +90,24 @@ class WhatsAppService:
         self, 
         customer_name: str, 
         therapy_type: str,
-        property_name: str
+        property_name: str,
+        therapist_name: str = None
     ) -> str:
         """Prepare the feedback message text"""
+        therapist_line = f"\nYour therapist: {therapist_name}" if therapist_name else ""
+        
         return f"""Dear {customer_name},
 
 Thank you for choosing Nirvaana Wellness at {property_name} 🌿
 
-We hope you enjoyed your {therapy_type} session.
+We hope you enjoyed your {therapy_type} session.{therapist_line}
 
 We value your feedback and would love to hear about your experience:
 {self.feedback_url}
 
 Your feedback helps us serve you better.
+
+For any queries, contact us: +91-9520034538
 
 Warm regards,
 Team Nirvaana Wellness
