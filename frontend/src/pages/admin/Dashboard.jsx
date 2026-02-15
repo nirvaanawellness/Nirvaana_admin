@@ -43,7 +43,11 @@ const AdminDashboard = ({ user, onLogout }) => {
     <div className="min-h-screen bg-background">
       <div className="bg-white/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-serif text-foreground">Nirvaana Wellness ERP</h1>
+          <img 
+            src="https://customer-assets.emergentagent.com/job_wellness-erp-core/artifacts/fny25i7a_Logo.png" 
+            alt="Nirvaana Wellness"
+            className="h-12 w-auto"
+          />
           <Button variant="outline" size="sm" onClick={onLogout} data-testid="logout-button">
             <LogOut className="w-4 h-4 mr-2" strokeWidth={1.5} />
             Logout
