@@ -167,15 +167,18 @@ const AdminTherapists = ({ user, onLogout }) => {
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Password (Optional)</Label>
                   <Input
                     id="password"
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    required
+                    placeholder="Leave empty for auto-generated password"
                     data-testid="therapist-password-input"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    If empty, a secure password will be auto-generated and sent via email
+                  </p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
