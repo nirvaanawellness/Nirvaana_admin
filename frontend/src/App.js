@@ -115,6 +115,10 @@ function App() {
             path="/admin/attendance"
             element={user?.role === 'super_admin' ? <AdminAttendance user={user} onLogout={handleLogout} /> : <Navigate to="/login" />}
           />
+          <Route
+            path="/admin/customers"
+            element={user?.role === 'super_admin' ? <AdminCustomers user={user} onLogout={handleLogout} /> : <Navigate to="/login" />}
+          />
           
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
