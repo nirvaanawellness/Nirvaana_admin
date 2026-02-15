@@ -165,7 +165,11 @@ async def create_therapist(therapist_data: TherapistCreate, current_user: dict =
 
 @api_router.get("/therapists")
 async def get_therapists(current_user: dict = Depends(get_current_admin)):
-    therapists = await db.therapists.find({}, {"_id": 0}).to_list(1000)
+    therapists_cursor = db.therapists.find({})
+    therapists = []
+    async for therapist in therapists_cursor:
+        therapist_dict = {k: v for k, v in therapist.items() if k != "_id"}
+        therapists.append(therapist_dict)
     return therapists
 
 @api_router.delete("/therapists/{therapist_id}")
