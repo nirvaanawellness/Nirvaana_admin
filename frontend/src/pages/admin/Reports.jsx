@@ -79,8 +79,8 @@ const AdminReports = ({ user, onLogout }) => {
               <SelectValue placeholder="Choose a property" />
             </SelectTrigger>
             <SelectContent>
-              {properties.map((prop, idx) => (
-                <SelectItem key={idx} value={String(idx)}>
+              {properties.map((prop) => (
+                <SelectItem key={prop.id} value={prop.id}>
                   {prop.hotel_name}
                 </SelectItem>
               ))}
