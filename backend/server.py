@@ -888,8 +888,13 @@ from models import OTPRequest, OTPVerify, PasswordChange
 @api_router.post("/auth/request-otp")
 async def request_otp(data: OTPRequest):
     """Request OTP for password change - sent to admin email"""
-    # Find user
-    user = await db.users.find_one({"email": data.email})
+    # Find user by email OR username
+    user = await db.users.find_one({
+        "$or": [
+            {"email": data.email},
+            {"username": data.email}
+        ]
+    })
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
