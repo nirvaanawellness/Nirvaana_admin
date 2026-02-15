@@ -133,6 +133,7 @@ class ServiceEntry(BaseModel):
 class ServiceEntryCreate(BaseModel):
     customer_name: str
     customer_phone: str
+    customer_email: Optional[str] = None  # For feedback emails
     therapy_type: str
     therapy_duration: str
     base_price: float
