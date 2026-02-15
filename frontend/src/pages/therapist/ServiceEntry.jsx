@@ -136,6 +136,23 @@ const TherapistServiceEntry = ({ user, onLogout }) => {
             </div>
 
             <div>
+              <Label htmlFor="customer_email">Customer Email (for feedback)</Label>
+              <div className="relative mt-2">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+                <Input
+                  id="customer_email"
+                  type="email"
+                  placeholder="customer@email.com (optional)"
+                  value={formData.customer_email}
+                  onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
+                  className="pl-11 h-12"
+                  data-testid="customer-email-input"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Feedback link will be sent to this email</p>
+            </div>
+
+            <div>
               <Label htmlFor="therapy_type">Therapy Type</Label>
               <Select
                 value={formData.therapy_type}
