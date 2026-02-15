@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { 
-  Building2, Users, Package, FileText, Award, LogOut,
+  Building2, Users, Package, FileText, Award,
   DollarSign, TrendingUp, UserCheck, Filter, X, Download, Receipt,
   ChevronLeft, ChevronRight, RotateCcw
 } from 'lucide-react';
@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import AppHeader from '@/components/shared/AppHeader';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
