@@ -14,7 +14,8 @@ from models import (
     Therapist, TherapistCreate,
     Attendance, AttendanceCheckIn,
     ServiceEntry, ServiceEntryCreate,
-    IncentiveRecord, MonthlyClosing, PaymentReceivedBy
+    IncentiveRecord, MonthlyClosing, PaymentReceivedBy,
+    Expense, ExpenseCreate, ExpenseType, ExpenseCategory
 )
 from auth import (
     get_password_hash, verify_password, create_access_token,
