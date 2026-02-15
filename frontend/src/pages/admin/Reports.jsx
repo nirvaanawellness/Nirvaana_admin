@@ -242,66 +242,67 @@ const AdminReports = ({ user, onLogout }) => {
     );
   };
 
-  // Get property share percentage
+  // Get property share percentage (Hotel's share of BASE revenue)
   const getPropertyShare = (propertyId) => {
     const prop = properties.find(p => p.hotel_name === propertyId || p.id === propertyId);
     return prop?.revenue_share_percentage || 50;
   };
 
-  // Calculate summary with CORRECT profit logic (property-wise)
+  /**
+   * CORRECTED SUMMARY CALCULATION
+   * 
+   * Key Changes:
+   * - Revenue share % applied ONLY on Base Amount (excluding GST)
+   * - GST is tracked separately and NOT included in profit calculation
+   * - Profit = Our Base Share - Expenses
+   */
   const summary = useMemo(() => {
-    // Group by property for accurate calculations
-    const propertyStats = {};
+    // Group services by property for accurate per-property calculations
+    const propertyGroups = {};
     
     services.forEach(service => {
       const propId = service.property_id;
-      if (!propertyStats[propId]) {
-        const hotelSharePercent = getPropertyShare(propId);
-        propertyStats[propId] = {
-          grossRevenue: 0,
-          hotelSharePercent,
-          expenses: 0
-        };
+      if (!propertyGroups[propId]) {
+        propertyGroups[propId] = [];
       }
-      propertyStats[propId].grossRevenue += service.base_price;
+      propertyGroups[propId].push(service);
     });
     
-    // Add expenses per property
-    expenses.forEach(exp => {
-      const propId = exp.property_id;
-      if (propertyStats[propId]) {
-        propertyStats[propId].expenses += exp.amount;
-      }
-    });
-    
-    // Calculate totals using correct formula
+    // Calculate using GST-aware settlement logic per property
+    let totalBaseRevenue = 0;
+    let totalGstCollected = 0;
     let totalGrossRevenue = 0;
-    let totalHotelShare = 0;
-    let totalOurRevenue = 0;
+    let totalHotelBaseShare = 0;
+    let totalNirvaanaBaseShare = 0;
     let totalExpenses = 0;
-    let totalNetProfit = 0;
     
-    Object.values(propertyStats).forEach(stat => {
-      const hotelShare = stat.grossRevenue * (stat.hotelSharePercent / 100);
-      const ourRevenue = stat.grossRevenue - hotelShare;
-      const netProfit = ourRevenue - stat.expenses;
+    Object.entries(propertyGroups).forEach(([propId, propServices]) => {
+      const hotelSharePercent = getPropertyShare(propId);
+      const settlement = calculateGSTAwareSettlement(propServices, hotelSharePercent);
       
-      totalGrossRevenue += stat.grossRevenue;
-      totalHotelShare += hotelShare;
-      totalOurRevenue += ourRevenue;
-      totalExpenses += stat.expenses;
-      totalNetProfit += netProfit;
+      totalBaseRevenue += settlement.baseRevenue;
+      totalGstCollected += settlement.gstCollected;
+      totalGrossRevenue += settlement.grossRevenue;
+      totalHotelBaseShare += settlement.hotelBaseShare;
+      totalNirvaanaBaseShare += settlement.nirvaanaBaseShare;
     });
     
-    const totalGst = services.reduce((sum, s) => sum + s.gst_amount, 0);
+    // Sum expenses
+    expenses.forEach(exp => {
+      totalExpenses += exp.amount;
+    });
+    
+    // PROFIT = Our Base Share - Expenses (GST excluded)
+    const netProfit = totalNirvaanaBaseShare - totalExpenses;
     
     return { 
+      baseRevenue: totalBaseRevenue,
+      gstCollected: totalGstCollected,
       grossRevenue: totalGrossRevenue,
-      hotelShare: totalHotelShare,
-      ourRevenue: totalOurRevenue,
-      totalGst,
+      hotelBaseShare: totalHotelBaseShare,
+      nirvaanaBaseShare: totalNirvaanaBaseShare,
       totalExpenses,
-      netProfit: totalNetProfit,
+      netProfit,
       transactionCount: services.length
     };
   }, [services, expenses, properties]);
