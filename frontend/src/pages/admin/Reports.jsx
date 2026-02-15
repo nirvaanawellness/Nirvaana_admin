@@ -1099,36 +1099,45 @@ const AdminReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
-      {/* P&L Report Dialog with correct formula */}
+      {/* P&L Report Dialog - GST-Aware Formula */}
       <Dialog open={pnlReportDialog} onOpenChange={setPnlReportDialog}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle className="font-serif text-xl">Profit & Loss Report</DialogTitle>
+            <DialogTitle className="font-serif text-xl">Profit & Loss Report - GST Separated</DialogTitle>
           </DialogHeader>
           
           {pnlReportData && (
             <div className="mt-4 space-y-6">
               <div className="grid grid-cols-2 gap-6">
+                {/* Current Period */}
                 <div className="border rounded-lg p-5">
                   <h4 className="font-medium text-muted-foreground mb-4">Current Period</h4>
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span>Gross Revenue</span>
+                      <span>Base Revenue (Excl. GST)</span>
+                      <span className="font-medium">₹{pnlReportData.period.baseRevenue.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-blue-600">
+                      <span>GST Collected (18%)</span>
+                      <span className="font-medium">₹{pnlReportData.period.gstCollected.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-2">
+                      <span>Gross Revenue (Incl. GST)</span>
                       <span className="font-medium">₹{pnlReportData.period.grossRevenue.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-amber-600">
-                      <span>– Hotel Share</span>
-                      <span className="font-medium">₹{pnlReportData.period.hotelShare.toLocaleString()}</span>
+                    <div className="flex justify-between text-amber-600 border-t pt-2">
+                      <span>Hotel Base Share</span>
+                      <span className="font-medium">₹{pnlReportData.period.hotelBaseShare.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-primary border-t pt-2">
-                      <span className="font-medium">= Our Revenue</span>
-                      <span className="font-medium">₹{pnlReportData.period.ourRevenue.toLocaleString()}</span>
+                    <div className="flex justify-between text-primary">
+                      <span className="font-medium">Our Base Share</span>
+                      <span className="font-medium">₹{pnlReportData.period.ourBaseShare.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-red-600">
-                      <span>– Expenses</span>
+                    <div className="flex justify-between text-red-600 border-t pt-2">
+                      <span>− Expenses</span>
                       <span className="font-medium">₹{pnlReportData.period.expenses.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between border-t pt-3">
+                    <div className="flex justify-between border-t-2 pt-3">
                       <span className="font-bold">= Net Profit</span>
                       <span className={`font-bold text-lg ${pnlReportData.period.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {pnlReportData.period.profit >= 0 ? '+' : '-'}₹{Math.abs(pnlReportData.period.profit).toLocaleString()}
@@ -1137,26 +1146,35 @@ const AdminReports = ({ user, onLogout }) => {
                   </div>
                 </div>
                 
+                {/* Cumulative */}
                 <div className="border-2 border-primary/30 rounded-lg p-5 bg-primary/5">
                   <h4 className="font-medium text-primary mb-4">Cumulative (All Time)</h4>
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span>Gross Revenue</span>
+                      <span>Base Revenue (Excl. GST)</span>
+                      <span className="font-medium">₹{pnlReportData.cumulative.baseRevenue.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-blue-600">
+                      <span>GST Collected (18%)</span>
+                      <span className="font-medium">₹{pnlReportData.cumulative.gstCollected.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-2">
+                      <span>Gross Revenue (Incl. GST)</span>
                       <span className="font-medium">₹{pnlReportData.cumulative.grossRevenue.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-amber-600">
-                      <span>– Hotel Share</span>
-                      <span className="font-medium">₹{pnlReportData.cumulative.hotelShare.toLocaleString()}</span>
+                    <div className="flex justify-between text-amber-600 border-t pt-2">
+                      <span>Hotel Base Share</span>
+                      <span className="font-medium">₹{pnlReportData.cumulative.hotelBaseShare.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-primary border-t pt-2">
-                      <span className="font-medium">= Our Revenue</span>
-                      <span className="font-medium">₹{pnlReportData.cumulative.ourRevenue.toLocaleString()}</span>
+                    <div className="flex justify-between text-primary">
+                      <span className="font-medium">Our Base Share</span>
+                      <span className="font-medium">₹{pnlReportData.cumulative.ourBaseShare.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-red-600">
-                      <span>– Expenses</span>
+                    <div className="flex justify-between text-red-600 border-t pt-2">
+                      <span>− Expenses</span>
                       <span className="font-medium">₹{pnlReportData.cumulative.expenses.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between border-t pt-3">
+                    <div className="flex justify-between border-t-2 pt-3">
                       <span className="font-bold">= Net Profit</span>
                       <span className={`font-bold text-xl ${pnlReportData.cumulative.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {pnlReportData.cumulative.profit >= 0 ? '+' : '-'}₹{Math.abs(pnlReportData.cumulative.profit).toLocaleString()}
@@ -1167,7 +1185,26 @@ const AdminReports = ({ user, onLogout }) => {
               </div>
               
               <div className="bg-muted/30 rounded-lg p-4 text-xs text-muted-foreground">
-                <p className="font-medium mb-1">Calculation Formula:</p>
+                <p className="font-medium mb-2 text-foreground">Calculation Formula (GST-Aware):</p>
+                <div className="space-y-1">
+                  <p>1. <strong>Hotel Base Share</strong> = Base Revenue × Hotel Share %</p>
+                  <p>2. <strong>Our Base Share</strong> = Base Revenue × (100% − Hotel Share %)</p>
+                  <p>3. <strong>Net Profit</strong> = Our Base Share − Expenses</p>
+                </div>
+                <p className="mt-2 pt-2 border-t border-border/50 text-amber-700">
+                  <strong>Important:</strong> GST is NOT included in profit calculation. Revenue share % is applied only on Base Amount.
+                </p>
+              </div>
+              
+              <DialogFooter>
+                <Button onClick={downloadPnlReport} data-testid="download-pnl-report">
+                  <Download className="w-4 h-4 mr-2" /> Download Excel
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
                 <p>Net Profit = (Gross Revenue × Our Share %) – Expenses</p>
                 <p>Share percentages are property-specific and calculated per property before aggregation.</p>
               </div>
