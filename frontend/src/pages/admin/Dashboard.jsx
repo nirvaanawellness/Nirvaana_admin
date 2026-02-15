@@ -27,7 +27,7 @@ const generateMonths = () => {
       year: date.getFullYear(),
       month: date.getMonth() + 1,
       label: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-      shortLabel: date.toLocaleDateString('en-US', { month: 'short' }),
+      shortLabel: date.toLocaleDateString('en-US', { month: 'short' }) + " '" + String(date.getFullYear()).slice(2),
       isCurrent: i === 0
     });
   }
