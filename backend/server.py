@@ -897,8 +897,6 @@ async def get_forecast(current_user: dict = Depends(get_current_admin)):
     
     # Get services from past 6 months
     now = datetime.now(timezone.utc)
-    six_months_ago = now.replace(month=now.month - 6 if now.month > 6 else now.month + 6, 
-                                  year=now.year if now.month > 6 else now.year - 1)
     
     # Build monthly data
     monthly_data = []
