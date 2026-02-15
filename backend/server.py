@@ -385,8 +385,8 @@ async def get_my_services(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/services")
 async def get_all_services(
-    property_id: Optional[List[str]] = None,
-    therapist_id: Optional[List[str]] = None,
+    property_id: Optional[List[str]] = Query(None),
+    therapist_id: Optional[List[str]] = Query(None),
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     current_user: dict = Depends(get_current_admin)
