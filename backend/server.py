@@ -959,7 +959,7 @@ async def verify_otp(data: OTPVerify):
 @api_router.post("/auth/change-password")
 async def change_password(data: PasswordChange):
     """Change password after OTP verification"""
-    # Verify OTP
+    # Verify OTP (OTP is stored by email, not username)
     otp_record = await db.otp_records.find_one({
         "email": data.email,
         "otp": data.otp,
@@ -978,10 +978,10 @@ async def change_password(data: PasswordChange):
     if len(data.new_password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
     
-    # Update password
+    # Update password - find user by email stored in OTP record
     new_hash = get_password_hash(data.new_password)
     result = await db.users.update_one(
-        {"email": data.email},
+        {"email": otp_record["email"]},  # Use email from OTP record
         {"$set": {"password_hash": new_hash}}
     )
     
@@ -990,7 +990,7 @@ async def change_password(data: PasswordChange):
     
     # Mark OTP as used
     await db.otp_records.update_one(
-        {"email": data.email, "otp": data.otp},
+        {"email": otp_record["email"], "otp": data.otp},
         {"$set": {"used": True}}
     )
     
