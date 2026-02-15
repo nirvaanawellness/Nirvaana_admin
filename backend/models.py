@@ -169,3 +169,37 @@ class TokenData(BaseModel):
     email: str
     role: UserRole
     user_id: str
+
+class ExpenseType(str, Enum):
+    SALARY = "salary"
+    LIVING_COST = "living_cost"
+    MARKETING = "marketing"
+    DISPOSABLES = "disposables"
+    OIL_AROMATICS = "oil_aromatics"
+    ESSENTIALS = "essentials"
+    BILL_BOOKS = "bill_books"
+    OTHER = "other"
+
+class ExpenseCategory(str, Enum):
+    RECURRING = "recurring"
+    ADHOC = "adhoc"
+
+class Expense(BaseModel):
+    property_id: str
+    expense_type: ExpenseType
+    category: ExpenseCategory
+    amount: float
+    description: Optional[str] = None
+    date: str
+    therapist_id: Optional[str] = None  # For salary expenses
+    created_by: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ExpenseCreate(BaseModel):
+    property_id: str
+    expense_type: ExpenseType
+    category: ExpenseCategory
+    amount: float
+    description: Optional[str] = None
+    date: str
+    therapist_id: Optional[str] = None
