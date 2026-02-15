@@ -385,17 +385,29 @@ async def get_my_services(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/services")
 async def get_all_services(
-    property_id: Optional[str] = None,
-    therapist_id: Optional[str] = None,
+    property_id: Optional[List[str]] = None,
+    therapist_id: Optional[List[str]] = None,
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     current_user: dict = Depends(get_current_admin)
 ):
     query = {}
-    if property_id:
-        query["property_id"] = property_id
-    if therapist_id:
-        query["therapist_id"] = therapist_id
+    
+    # Handle multiple property IDs
+    if property_id and len(property_id) > 0:
+        if len(property_id) == 1:
+            query["property_id"] = property_id[0]
+        else:
+            query["property_id"] = {"$in": property_id}
+    
+    # Handle multiple therapist IDs
+    if therapist_id and len(therapist_id) > 0:
+        if len(therapist_id) == 1:
+            query["therapist_id"] = therapist_id[0]
+        else:
+            query["therapist_id"] = {"$in": therapist_id}
+    
+    # Handle date range
     if date_from:
         query["date"] = {"$gte": date_from}
     if date_to:
