@@ -87,12 +87,23 @@ async def login(credentials: UserLogin):
     }
 
 @api_router.get("/properties")
-async def get_properties(current_user: dict = Depends(get_current_user)):
-    properties_cursor = db.properties.find({})
+async def get_properties(
+    include_archived: bool = Query(False, description="Include archived properties"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get properties. By default only returns active properties."""
+    query = {}
+    if not include_archived:
+        query["status"] = {"$ne": "archived"}
+    
+    properties_cursor = db.properties.find(query)
     properties = []
     async for prop in properties_cursor:
         prop_dict = {k: v for k, v in prop.items() if k != "_id"}
         prop_dict["id"] = str(prop["_id"])
+        # Ensure status field exists (for backward compatibility)
+        if "status" not in prop_dict:
+            prop_dict["status"] = "active"
         properties.append(prop_dict)
     return properties
 
