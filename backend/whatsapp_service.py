@@ -32,7 +32,8 @@ class WhatsAppService:
         customer_phone: str, 
         customer_name: str,
         therapy_type: str,
-        property_name: str
+        property_name: str,
+        therapist_name: str = None
     ) -> dict:
         """
         Send automated feedback message to customer after service
@@ -42,18 +43,15 @@ class WhatsAppService:
             customer_name: Customer's name
             therapy_type: Type of therapy received
             property_name: Hotel/Property name
+            therapist_name: Name of the therapist who provided service
             
         Returns:
             dict with status and message_id (if successful)
         """
         
         if not self.enabled:
-            logger.info("WhatsApp service is disabled. Skipping message.")
-            return {
-                "success": False,
-                "message": "WhatsApp service disabled",
-                "status": "disabled"
-            }
+            logger.info("WhatsApp service is disabled. Trying SMS backup.")
+            return await self._send_via_sms(customer_phone, customer_name, therapy_type, property_name, therapist_name)
         
         # Format phone number (ensure it starts with +)
         if not customer_phone.startswith("+"):
@@ -63,21 +61,30 @@ class WhatsAppService:
         message_text = self._prepare_feedback_message(
             customer_name, 
             therapy_type, 
-            property_name
+            property_name,
+            therapist_name
         )
         
         # Send via appropriate provider
+        result = None
         if self.provider == "twilio":
-            return await self._send_via_twilio(customer_phone, message_text)
+            result = await self._send_via_twilio(customer_phone, message_text)
         elif self.provider == "whatsapp_business_api":
-            return await self._send_via_whatsapp_business_api(customer_phone, message_text)
+            result = await self._send_via_whatsapp_business_api(customer_phone, message_text)
         else:
             logger.error(f"Unknown WhatsApp provider: {self.provider}")
-            return {
+            result = {
                 "success": False,
                 "message": f"Unknown provider: {self.provider}",
                 "status": "error"
             }
+        
+        # If WhatsApp fails, try SMS
+        if not result.get("success"):
+            logger.info("WhatsApp failed, attempting SMS backup")
+            return await self._send_via_sms(customer_phone, customer_name, therapy_type, property_name, therapist_name)
+        
+        return result
     
     def _prepare_feedback_message(
         self, 
