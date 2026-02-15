@@ -15,6 +15,7 @@ import AdminIncentives from './pages/admin/Incentives';
 import AdminExpenses from './pages/admin/Expenses';
 import AdminSettings from './pages/admin/Settings';
 import AdminAttendance from './pages/admin/Attendance';
+import AdminCustomers from './pages/admin/Customers';
 import './App.css';
 
 function App() {
