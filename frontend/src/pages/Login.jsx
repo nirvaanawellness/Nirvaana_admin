@@ -47,10 +47,10 @@ const Login = ({ onLogin }) => {
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-background">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <h1 className="text-4xl font-serif text-primary mb-6" style={{ fontWeight: 700, letterSpacing: '0.5px' }}>
+            <h1 className="text-4xl font-serif mb-6" style={{ fontWeight: 700, letterSpacing: '0.5px', color: '#B89D62' }}>
               Nirvaana Wellness
             </h1>
-            <p className="text-muted-foreground">Internal Operations Portal</p>
+            <p className="text-muted-foreground text-sm">Internal Operations Management</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6" data-testid="login-form">
