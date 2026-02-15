@@ -613,6 +613,20 @@ const AdminDashboard = ({ user, onLogout }) => {
               </div>
             </div>
           </Link>
+
+          <Link to="/admin/customers">
+            <div className="glass rounded-2xl p-6 hover:shadow-float transition-all cursor-pointer" data-testid="customers-nav">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                  <Users2 className="w-6 h-6 text-purple-600" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-foreground">Customers</h3>
+                  <p className="text-sm text-muted-foreground">Customer directory</p>
+                </div>
+              </div>
+            </div>
+          </Link>
         </div>
       </div>
 
