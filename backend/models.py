@@ -20,6 +20,10 @@ class PaymentMode(str, Enum):
     UPI = "upi"
     CARD = "card"
 
+class EntityStatus(str, Enum):
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+
 class User(BaseModel):
     email: str
     phone: str
@@ -27,7 +31,9 @@ class User(BaseModel):
     role: UserRole
     full_name: str
     assigned_property_id: Optional[str] = None
+    status: EntityStatus = EntityStatus.ACTIVE
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    archived_at: Optional[datetime] = None
 
 class UserCreate(BaseModel):
     email: str
@@ -51,6 +57,8 @@ class Property(BaseModel):
     contact_person: str
     contact_number: str
     active: bool = True
+    status: EntityStatus = EntityStatus.ACTIVE
+    archived_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class PropertyCreate(BaseModel):
@@ -76,6 +84,8 @@ class Therapist(BaseModel):
     bank_details: Optional[str] = None
     assigned_property_id: str
     monthly_target: float = 0.0
+    status: EntityStatus = EntityStatus.ACTIVE
+    archived_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class TherapistCreate(BaseModel):
