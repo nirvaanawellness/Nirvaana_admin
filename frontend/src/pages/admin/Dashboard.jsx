@@ -44,7 +44,7 @@ const AdminDashboard = ({ user, onLogout }) => {
   // Timeline state
   const months = useMemo(() => generateMonths(), []);
   const [selectedMonth, setSelectedMonth] = useState(null); // null = today only
-  const [timelineOffset, setTimelineOffset] = useState(0);
+  const [timelineOffset, setTimelineOffset] = useState(Math.max(0, months.length - 6)); // Start showing current month on right
   
   // Filters
   const [selectedProperties, setSelectedProperties] = useState([]);
