@@ -1,0 +1,171 @@
+{
+  "project_name": "Nirvaana Wellness ERP",
+  "design_philosophy": {
+    "identity": "E1 - The Anti-AI Designer",
+    "core_concept": "Organic Luxury & Operational Clarity",
+    "emotional_tone": "Calm, Organized, Premium, Efficient",
+    "visual_style": "Spa-inspired, Warm Neutrals, Gold Accents, Soft Edges"
+  },
+  "typography": {
+    "font_family": {
+      "headings": "Tenor Sans, serif",
+      "body": "Manrope, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "scale": {
+      "h1": "text-4xl md:text-5xl lg:text-6xl font-normal tracking-tight",
+      "h2": "text-3xl md:text-4xl font-normal tracking-tight",
+      "h3": "text-2xl md:text-3xl font-normal",
+      "h4": "text-xl md:text-2xl font-medium",
+      "body_lg": "text-lg leading-relaxed",
+      "body_base": "text-base leading-relaxed",
+      "body_sm": "text-sm leading-relaxed",
+      "caption": "text-xs tracking-wider uppercase opacity-70"
+    },
+    "installation": {
+      "google_fonts_url": "https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Tenor+Sans&display=swap"
+    }
+  },
+  "colors": {
+    "palette": {
+      "background": {
+        "default": "#F9F8F6",
+        "paper": "#FFFFFF",
+        "subtle": "#F2F0EB"
+      },
+      "foreground": {
+        "default": "#2C2420",
+        "muted": "#6B5E55",
+        "inverse": "#F9F8F6"
+      },
+      "primary": {
+        "default": "#B89D62",
+        "foreground": "#FFFFFF",
+        "hover": "#A38B55"
+      },
+      "secondary": {
+        "default": "#E6D6CC",
+        "foreground": "#2C2420",
+        "hover": "#DBC4B5"
+      },
+      "accent": {
+        "default": "#88856A",
+        "foreground": "#FFFFFF"
+      },
+      "destructive": {
+        "default": "#C76B6B",
+        "foreground": "#FFFFFF"
+      },
+      "border": {
+        "default": "#E6E2DE",
+        "active": "#B89D62"
+      },
+      "ring": "#B89D62"
+    },
+    "gradients": {
+      "gold_sheen": "linear-gradient(135deg, #F0E6D2 0%, #D4AF37 100%)",
+      "spa_mist": "linear-gradient(180deg, rgba(255,255,255,0) 0%, #F9F8F6 100%)"
+    }
+  },
+  "layout": {
+    "spacing": {
+      "container_padding": "p-6 md:p-12 lg:p-16",
+      "section_gap": "gap-8 md:gap-12",
+      "element_gap": "gap-4"
+    },
+    "border_radius": {
+      "card": "rounded-2xl",
+      "button": "rounded-full",
+      "input": "rounded-lg"
+    },
+    "grid_system": {
+      "dashboard_bento": "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6",
+      "form_grid": "grid grid-cols-1 md:grid-cols-2 gap-6"
+    }
+  },
+  "visual_enhancers": {
+    "shadows": {
+      "soft": "0 4px 20px -2px rgba(44, 36, 32, 0.05)",
+      "float": "0 10px 40px -10px rgba(44, 36, 32, 0.1)",
+      "inner": "inset 0 2px 4px 0 rgba(0, 0, 0, 0.02)"
+    },
+    "glassmorphism": {
+      "default": "bg-white/70 backdrop-blur-xl border border-white/40 shadow-sm",
+      "darker": "bg-[#2C2420]/5 backdrop-blur-md border border-[#2C2420]/5"
+    },
+    "textures": {
+      "noise": "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E\")"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 shadow-soft transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0",
+      "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+      "outline": "border border-input bg-background hover:bg-accent hover:text-accent-foreground border-primary/20 text-primary"
+    },
+    "cards": {
+      "default": "bg-white/80 backdrop-blur-sm border border-border/50 shadow-soft rounded-2xl p-6 transition-all hover:shadow-float",
+      "interactive": "cursor-pointer hover:border-primary/30 hover:bg-white/90"
+    },
+    "inputs": {
+      "default": "bg-white/50 border-border/80 focus:border-primary focus:ring-primary/20 rounded-lg h-12 px-4 transition-all"
+    }
+  },
+  "motion": {
+    "transitions": {
+      "default": "transition-all duration-300 ease-out",
+      "slow": "transition-all duration-700 ease-out"
+    },
+    "animations": {
+      "fade_in": "animate-in fade-in duration-500",
+      "slide_up": "animate-in slide-in-from-bottom-4 duration-500 fade-in",
+      "scale_in": "animate-in zoom-in-95 duration-300 fade-in"
+    }
+  },
+  "assets": {
+    "icons_library": "lucide-react",
+    "icon_style": "stroke-width={1.5} className='text-primary/80'",
+    "image_urls": {
+      "backgrounds": [
+        {
+          "url": "https://images.unsplash.com/photo-1601002257790-ebe0966a85ae?auto=format&fit=crop&q=80",
+          "category": "texture",
+          "description": "Abstract luxury fabric texture for backgrounds"
+        },
+        {
+            "url": "https://images.unsplash.com/photo-1741678095296-2b5cd407cc90?auto=format&fit=crop&q=80",
+            "category": "hero",
+            "description": "Luxurious spa interior for login pages"
+        }
+      ],
+      "people": [
+        {
+            "url": "https://images.unsplash.com/photo-1596178060671-7a80dc8059ea?auto=format&fit=crop&q=80",
+            "category": "avatar",
+            "description": "Professional therapist portrait"
+        }
+      ]
+    }
+  },
+  "instructions_to_main_agent": [
+    "Install dependencies: `npm install lucide-react framer-motion clsx tailwind-merge recharts date-fns` (or yarn add)",
+    "Update `tailwind.config.js` with the provided color palette and fonts.",
+    "Import the Google Fonts in `index.css` or `index.html`.",
+    "Apply `bg-[#F9F8F6]` (Stone-50 equivalent) to the body tag to kill the stark white.",
+    "Use 'Tenor Sans' for all H1, H2, H3 headings. Use 'Manrope' for body text and UI elements.",
+    "For the Therapist Mobile View: Use a bottom navigation bar or a clean drawer. Buttons must be at least 48px height for touch targets.",
+    "For Admin Dashboard: Use the 'Bento Grid' layout. Avoid standard tables where possible; use 'Card Lists' or specialized data views.",
+    "Charts: Use `recharts`. Style them with the custom palette: Gold (#B89D62) for revenue, Sage (#88856A) for completed targets, Terracotta (#C76B6B) for missed targets.",
+    "Login Page: Use a split layout with the luxury interior image on one side (or top on mobile) and the form on the other.",
+    "Use 'Sonner' for toasts, styled with the 'glassmorphism' class.",
+    "CRITICAL: Do not use default blue colors. Replace all default blues with the Primary Gold or Muted Sage."
+  ],
+  "UNIVERSAL_GUIDELINES": [
+    "Avoid generic 'AI slop' aesthetics; no default shadows or standard Tailwind blues.",
+    "Micro-animations are mandatory for every interaction (hover, click, focus).",
+    "Use z-index hierarchy to create depth (shadows + blur).",
+    "Never use generic emojis as icons.",
+    "Ensure 2-3x generous spacing between sections.",
+    "Respect 'prefers-reduced-motion'."
+  ]
+}
