@@ -264,7 +264,8 @@ async def create_service_entry(service_data: ServiceEntryCreate, current_user: d
             customer_phone=service_data.customer_phone,
             customer_name=service_data.customer_name,
             therapy_type=service_data.therapy_type,
-            property_name=property_name
+            property_name=property_name,
+            therapist_name=therapist.get("full_name", "Our therapist")
         )
         
         # Update service entry with WhatsApp status
