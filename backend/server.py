@@ -86,7 +86,12 @@ async def login(credentials: UserLogin):
 
 @api_router.get("/properties")
 async def get_properties(current_user: dict = Depends(get_current_user)):
-    properties = await db.properties.find({}, {"_id": 0}).to_list(1000)
+    properties_cursor = db.properties.find({})
+    properties = []
+    async for prop in properties_cursor:
+        prop_dict = {k: v for k, v in prop.items() if k != "_id"}
+        prop_dict["id"] = str(prop["_id"])
+        properties.append(prop_dict)
     return properties
 
 @api_router.post("/properties")
