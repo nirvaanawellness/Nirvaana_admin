@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { 
   LayoutDashboard, Building2, Users, Package, FileText, Award, LogOut,
-  DollarSign, TrendingUp, UserCheck, Calendar, Filter, X, Download
+  DollarSign, TrendingUp, UserCheck, Calendar, Filter, X, Download, Receipt
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
