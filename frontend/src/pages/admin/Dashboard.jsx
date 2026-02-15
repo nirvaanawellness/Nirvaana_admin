@@ -239,47 +239,40 @@ const AdminDashboard = ({ user, onLogout }) => {
   const hasActiveFilters = selectedProperties.length > 0 || selectedTherapists.length > 0 || selectedMonth !== null;
   const visibleMonths = months.slice(Math.max(0, timelineOffset), timelineOffset + 6);
 
+  const headerRightContent = (
+    <div className="flex items-center gap-2">
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        onClick={() => setShowFilters(!showFilters)}
+        className="text-[#B89D62]/80 hover:text-[#B89D62] hover:bg-[#B89D62]/10"
+        data-testid="toggle-filters-button"
+      >
+        <Filter className="w-4 h-4 mr-2" strokeWidth={1.5} />
+        Filters
+        {(selectedProperties.length > 0 || selectedTherapists.length > 0) && 
+          <span className="ml-2 bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+            {selectedProperties.length + selectedTherapists.length}
+          </span>
+        }
+      </Button>
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        onClick={downloadExcel}
+        disabled={allServices.length === 0}
+        className="text-[#B89D62]/80 hover:text-[#B89D62] hover:bg-[#B89D62]/10"
+        data-testid="download-excel-button"
+      >
+        <Download className="w-4 h-4 mr-2" strokeWidth={1.5} />
+        Excel
+      </Button>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="bg-white/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <img 
-            src="https://customer-assets.emergentagent.com/job_wellness-erp-core/artifacts/fny25i7a_Logo.png" 
-            alt="Nirvaana Wellness"
-            className="h-12 w-auto"
-          />
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowFilters(!showFilters)}
-              data-testid="toggle-filters-button"
-            >
-              <Filter className="w-4 h-4 mr-2" strokeWidth={1.5} />
-              Filters
-              {(selectedProperties.length > 0 || selectedTherapists.length > 0) && 
-                <span className="ml-2 bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                  {selectedProperties.length + selectedTherapists.length}
-                </span>
-              }
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={downloadExcel}
-              disabled={allServices.length === 0}
-              data-testid="download-excel-button"
-            >
-              <Download className="w-4 h-4 mr-2" strokeWidth={1.5} />
-              Excel
-            </Button>
-            <Button variant="outline" size="sm" onClick={onLogout} data-testid="logout-button">
-              <LogOut className="w-4 h-4 mr-2" strokeWidth={1.5} />
-              Logout
-            </Button>
-          </div>
-        </div>
-      </div>
+      <AppHeader user={user} onLogout={onLogout} rightContent={headerRightContent} />
 
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         {/* Welcome + Month Timeline */}
