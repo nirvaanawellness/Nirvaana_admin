@@ -826,7 +826,7 @@ async def request_otp(data: OTPRequest):
         else:
             # If email fails, return OTP in response (for development)
             return {"message": "OTP generated (email delivery failed)", "otp": otp, "note": "Use this OTP to change password"}
-    except Exception as e:
+    except Exception:
         # Return OTP in response if email fails
         return {"message": "OTP generated (email service unavailable)", "otp": otp, "note": "Use this OTP to change password"}
 
