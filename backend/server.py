@@ -522,38 +522,77 @@ async def create_service_entry(service_data: ServiceEntryCreate, current_user: d
     if not therapist:
         raise HTTPException(status_code=404, detail="Therapist not found")
     
-    # Get property details for WhatsApp message
+    # Get property details
     property_name = therapist["assigned_property_id"]
+    therapist_name = therapist.get("full_name", "Our therapist")
     
     gst_amount = round(service_data.base_price * 0.18, 2)
     total_amount = round(service_data.base_price + gst_amount, 2)
     
     now = datetime.now(timezone.utc)
+    service_date = now.strftime("%Y-%m-%d")
     service_dict = service_data.model_dump()
     service_dict.update({
         "therapist_id": current_user["user_id"],
         "property_id": therapist["assigned_property_id"],
         "gst_amount": gst_amount,
         "total_amount": total_amount,
-        "date": now.strftime("%Y-%m-%d"),
+        "date": service_date,
         "time": now.strftime("%H:%M:%S"),
         "locked": True,
         "whatsapp_sent": False,
         "whatsapp_status": "pending",
+        "feedback_email_sent": False,
         "created_at": now.isoformat()
     })
     
     result = await db.services.insert_one(service_dict)
     service_id = str(result.inserted_id)
     
-    # Send WhatsApp feedback message
+    feedback_status = "not_sent"
+    
+    # Send feedback email if customer email is provided
+    if service_data.customer_email:
+        try:
+            email_result = await email_service.send_feedback_email(
+                customer_email=service_data.customer_email,
+                customer_name=service_data.customer_name,
+                therapy_type=service_data.therapy_type,
+                therapist_name=therapist_name,
+                property_name=property_name,
+                service_date=service_date
+            )
+            
+            # Update service entry with email status
+            await db.services.update_one(
+                {"_id": result.inserted_id},
+                {
+                    "$set": {
+                        "feedback_email_sent": email_result.get("success", False),
+                        "feedback_email_id": email_result.get("message_id")
+                    }
+                }
+            )
+            
+            if email_result.get("success"):
+                feedback_status = "sent"
+                logger.info(f"Feedback email sent for service {service_id} to {service_data.customer_email}")
+            else:
+                feedback_status = f"failed: {email_result.get('message', 'unknown error')}"
+                logger.warning(f"Feedback email failed for service {service_id}: {email_result.get('message')}")
+                
+        except Exception as e:
+            logger.error(f"Failed to send feedback email for service {service_id}: {str(e)}")
+            feedback_status = f"error: {str(e)}"
+    
+    # Send WhatsApp feedback message (still mocked)
     try:
         whatsapp_result = await whatsapp_service.send_feedback_message(
             customer_phone=service_data.customer_phone,
             customer_name=service_data.customer_name,
             therapy_type=service_data.therapy_type,
             property_name=property_name,
-            therapist_name=therapist.get("full_name", "Our therapist")
+            therapist_name=therapist_name
         )
         
         # Update service entry with WhatsApp status
@@ -579,7 +618,8 @@ async def create_service_entry(service_data: ServiceEntryCreate, current_user: d
         "service_id": service_id,
         "gst_amount": gst_amount,
         "total_amount": total_amount,
-        "whatsapp_note": "Feedback message will be sent if WhatsApp is configured"
+        "feedback_email_status": feedback_status,
+        "whatsapp_note": "WhatsApp feedback is mocked (placeholder)"
     }
 
 @api_router.get("/services/my-services")
