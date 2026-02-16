@@ -165,8 +165,14 @@ const AdminAttendance = ({ user, onLogout }) => {
     if (!record.check_out_time) {
       return <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">Working</span>;
     }
-    return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">Complete</span>;
+    const hoursWorked = calculateHoursWorked(record.check_in_time, record.check_out_time);
+    if (hoursWorked >= 9) {
+      return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">Complete (9+ hrs)</span>;
+    }
+    return <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-700">{hoursWorked.toFixed(1)} hrs</span>;
   };
+
+  const completionStats = getCompletionStats();
 
   const isToday = selectedDate === new Date().toISOString().split('T')[0];
 
