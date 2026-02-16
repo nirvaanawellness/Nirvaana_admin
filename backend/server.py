@@ -35,32 +35,45 @@ db = client[os.environ['DB_NAME']]
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
+@api_router.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    try:
+        # Test MongoDB connection
+        await db.command("ping")
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
+
 @api_router.get("/auth/init-admin")
 async def init_admin():
     """Initialize admin user if not exists - call once after deployment"""
-    existing = await db.users.find_one({"role": "super_admin"})
-    if existing:
-        return {"message": "Admin already exists", "email": existing.get("email")}
-    
-    admin_data = {
-        "email": "nirvaanabysunrise@gmail.com",
-        "username": "admin",
-        "phone": "+919520034538",
-        "full_name": "Admin User",
-        "role": "super_admin",
-        "status": "active",
-        "password_hash": get_password_hash("admin123"),
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    
-    result = await db.users.insert_one(admin_data)
-    return {
-        "message": "Admin user created successfully",
-        "email": admin_data["email"],
-        "username": admin_data["username"],
-        "password": "admin123",
-        "note": "Please change password after first login"
-    }
+    try:
+        existing = await db.users.find_one({"role": "super_admin"})
+        if existing:
+            return {"message": "Admin already exists", "email": existing.get("email")}
+        
+        admin_data = {
+            "email": "nirvaanabysunrise@gmail.com",
+            "username": "admin",
+            "phone": "+919520034538",
+            "full_name": "Admin User",
+            "role": "super_admin",
+            "status": "active",
+            "password_hash": get_password_hash("admin123"),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        result = await db.users.insert_one(admin_data)
+        return {
+            "message": "Admin user created successfully",
+            "email": admin_data["email"],
+            "username": admin_data["username"],
+            "password": "admin123",
+            "note": "Please change password after first login"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @api_router.post("/auth/register")
 async def register(user_data: UserCreate):
