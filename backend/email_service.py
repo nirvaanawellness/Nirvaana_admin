@@ -425,8 +425,8 @@ Team Nirvaana Wellness
             logger.info("No customer email provided. Feedback email not sent.")
             return {"success": False, "message": "No customer email provided"}
         
-        # Google Form feedback link (you can replace with your own form)
-        feedback_url = f"https://forms.gle/nirvaana-feedback"  # Replace with actual form
+        # Feedback link - redirects to Nirvaana Wellness feedback page
+        feedback_url = "https://www.nirvaanawellness.com/feedback"
         
         subject = f"Thank You for Visiting Nirvaana Wellness at {property_name}"
         
