@@ -1162,7 +1162,7 @@ const AdminReports = ({ user, onLogout }) => {
                       <span className="font-medium">₹{pnlReportData.selection.baseRevenue.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-blue-600">
-                      <span>GST (18%)</span>
+                      <span>GST (5%)</span>
                       <span className="font-medium">₹{pnlReportData.selection.gstCollected.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between border-t pt-1">
@@ -1207,7 +1207,7 @@ const AdminReports = ({ user, onLogout }) => {
                       <span className="font-medium">₹{pnlReportData.currentPeriod.baseRevenue.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-blue-600">
-                      <span>GST (18%)</span>
+                      <span>GST (5%)</span>
                       <span className="font-medium">₹{pnlReportData.currentPeriod.gstCollected.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between border-t pt-1">
@@ -1252,7 +1252,7 @@ const AdminReports = ({ user, onLogout }) => {
                       <span className="font-medium">₹{pnlReportData.allTime.baseRevenue.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-blue-600">
-                      <span>GST (18%)</span>
+                      <span>GST (5%)</span>
                       <span className="font-medium">₹{pnlReportData.allTime.gstCollected.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between border-t pt-1">
