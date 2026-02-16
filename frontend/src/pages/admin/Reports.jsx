@@ -88,9 +88,9 @@ const calculateGSTAwareSettlement = (services, hotelSharePercent) => {
   const nirvaanaBaseShare = totals.baseRevenue * (1 - hotelSharePercent / 100);
   
   // Step 3: Calculate GST liability proportionate to base share
-  // Each party's GST liability = Their Base Share × GST Rate (18%)
-  const hotelGSTLiability = hotelBaseShare * 0.18;
-  const nirvaanaGSTLiability = nirvaanaBaseShare * 0.18;
+  // Each party's GST liability = Their Base Share × GST Rate (5%)
+  const hotelGSTLiability = hotelBaseShare * 0.05;
+  const nirvaanaGSTLiability = nirvaanaBaseShare * 0.05;
   
   // Step 4: Calculate expected TOTAL (Base + GST) for each party
   const hotelExpectedTotal = hotelBaseShare + hotelGSTLiability;
