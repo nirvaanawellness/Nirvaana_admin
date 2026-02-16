@@ -82,7 +82,7 @@ const AdminTherapists = ({ user, onLogout }) => {
         salary_expectation: formData.salary_expectation ? parseFloat(formData.salary_expectation) : null,
         monthly_target: parseFloat(formData.monthly_target || 0)
       };
-      await axios.post(`${API}/therapists`, payload, {
+      const response = await axios.post(`${API}/therapists`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
