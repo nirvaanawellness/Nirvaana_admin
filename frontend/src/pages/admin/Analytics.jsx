@@ -434,20 +434,6 @@ const Analytics = ({ user, onLogout }) => {
                 </div>
               </div>
             )}
-                      <p className="text-foreground font-medium mt-1">
-                        ₹{forecast.regression_forecast.toLocaleString('en-IN')}
-                      </p>
-                    </div>
-                    <div className="bg-primary/5 rounded-lg p-3">
-                      <span className="text-muted-foreground">Combined (Final)</span>
-                      <p className="text-foreground font-medium mt-1">
-                        ₹{forecast.predicted_revenue.toLocaleString('en-IN')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </>
         ) : (
           <div className="glass rounded-2xl p-12 flex items-center justify-center">
