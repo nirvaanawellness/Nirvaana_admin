@@ -303,6 +303,7 @@ const AdminAttendance = ({ user, onLogout }) => {
                     <TableHead>Property</TableHead>
                     <TableHead>Sign In</TableHead>
                     <TableHead>Sign Out</TableHead>
+                    <TableHead>Hours</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
