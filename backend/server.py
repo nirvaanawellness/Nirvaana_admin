@@ -601,7 +601,7 @@ async def create_service_entry(service_data: ServiceEntryCreate, current_user: d
     property_name = therapist["assigned_property_id"]
     therapist_name = therapist.get("full_name", "Our therapist")
     
-    gst_amount = round(service_data.base_price * 0.18, 2)
+    gst_amount = round(service_data.base_price * 0.05, 2)
     total_amount = round(service_data.base_price + gst_amount, 2)
     
     now = datetime.now(timezone.utc)
