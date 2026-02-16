@@ -18,6 +18,7 @@ const AdminTherapists = ({ user, onLogout }) => {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingTherapist, setEditingTherapist] = useState(null);
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
