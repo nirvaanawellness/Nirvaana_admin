@@ -43,6 +43,7 @@ class EmailService:
         self,
         therapist_email: str,
         therapist_name: str,
+        username: str,
         password: str,
         property_name: str
     ) -> dict:
@@ -52,7 +53,8 @@ class EmailService:
         Args:
             therapist_email: Therapist's personal email
             therapist_name: Therapist's full name
-            password: Generated password
+            username: Generated username (e.g., anita427)
+            password: Generated password (DOB in DDMMYY)
             property_name: Assigned property name
             
         Returns:
@@ -64,6 +66,7 @@ class EmailService:
             return {
                 "success": False,
                 "message": "Email service disabled",
+                "username": username,
                 "password": password  # Return password for manual sharing
             }
         
@@ -103,11 +106,13 @@ class EmailService:
                 <p><strong>Portal URL:</strong><br>
                 <a href="{self.portal_url}">{self.portal_url}</a></p>
                 
-                <p><strong>Email:</strong><br>
-                {therapist_email}</p>
+                <p><strong>Username:</strong><br>
+                <span style="font-size: 18px; font-weight: bold; color: #B89D62;">{username}</span></p>
                 
                 <p><strong>Password:</strong><br>
                 <span style="font-size: 18px; letter-spacing: 2px; font-weight: bold;">{password}</span></p>
+                
+                <p style="font-size: 12px; color: #666;">(You can also login using your email: {therapist_email})</p>
             </div>
             
             <p class="important">⚠️ Important: Please change your password after first login for security.</p>
