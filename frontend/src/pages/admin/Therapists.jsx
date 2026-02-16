@@ -281,7 +281,7 @@ const AdminTherapists = ({ user, onLogout }) => {
             </p>
           </div>
           
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
               <Button data-testid="add-therapist-button">
                 <Plus className="w-4 h-4 mr-2" strokeWidth={1.5} />
@@ -290,7 +290,9 @@ const AdminTherapists = ({ user, onLogout }) => {
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="font-serif text-xl">Onboard New Therapist</DialogTitle>
+                <DialogTitle className="font-serif text-xl">
+                  {editingTherapist ? 'Edit Therapist' : 'Onboard New Therapist'}
+                </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4" data-testid="add-therapist-form">
                 <div className="grid grid-cols-2 gap-4">
@@ -325,17 +327,19 @@ const AdminTherapists = ({ user, onLogout }) => {
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       required
+                      disabled={!!editingTherapist}
                       data-testid="email-input"
                     />
+                    {editingTherapist && <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>}
                   </div>
                   <div>
-                    <Label htmlFor="date_of_birth">Date of Birth *</Label>
+                    <Label htmlFor="date_of_birth">Date of Birth {!editingTherapist && '*'}</Label>
                     <Input
                       id="date_of_birth"
                       type="date"
                       value={formData.date_of_birth}
                       onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                      required
+                      required={!editingTherapist}
                       data-testid="dob-input"
                     />
                     <p className="text-xs text-muted-foreground mt-1">Used to generate password (DDMMYY format)</p>
