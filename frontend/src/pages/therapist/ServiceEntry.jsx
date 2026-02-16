@@ -219,7 +219,7 @@ const TherapistServiceEntry = ({ user, onLogout }) => {
                   <span className="text-foreground font-medium">₹{parseFloat(formData.base_price).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">GST (18%)</span>
+                  <span className="text-muted-foreground">GST (5%)</span>
                   <span className="text-foreground font-medium">₹{calculatedAmounts.gst}</span>
                 </div>
                 <div className="flex justify-between text-base border-t border-border pt-2">
