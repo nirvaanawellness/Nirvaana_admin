@@ -299,12 +299,14 @@ const Analytics = ({ user, onLogout }) => {
                       axisLine={{ stroke: '#e5e5e5' }}
                     />
                     <Tooltip content={<CustomTooltip />} />
-                    <ReferenceLine 
-                      x={forecast.forecast_label} 
-                      stroke="#f59e0b" 
-                      strokeDasharray="5 5"
-                      label={{ value: 'Forecast', fill: '#f59e0b', fontSize: 11 }}
-                    />
+                    {forecastLabel && (
+                      <ReferenceLine 
+                        x={forecastLabel} 
+                        stroke="#f59e0b" 
+                        strokeDasharray="5 5"
+                        label={{ value: 'Forecast', fill: '#f59e0b', fontSize: 11 }}
+                      />
+                    )}
                     <Area
                       type="monotone"
                       dataKey="revenue"
