@@ -1,11 +1,16 @@
+from dotenv import load_dotenv
+from pathlib import Path
+import os
+
+# Load environment variables BEFORE importing modules that depend on them
+ROOT_DIR = Path(__file__).parent
+load_dotenv(ROOT_DIR / '.env')
+
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Query
 from fastapi.security import HTTPAuthorizationCredentials
-from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-import os
 import logging
-from pathlib import Path
 from typing import List, Optional
 from datetime import datetime, timezone
 from models import (
@@ -23,9 +28,6 @@ from auth import (
 )
 from whatsapp_service import whatsapp_service
 from email_service import email_service
-
-ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
 
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
