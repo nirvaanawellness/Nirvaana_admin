@@ -204,19 +204,45 @@ async def create_therapist(therapist_data: TherapistCreate, current_user: dict =
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Auto-generate secure password if not provided or if email service enabled
-    use_email = os.getenv("EMAIL_ENABLED", "false").lower() == "true"
-    if use_email or not therapist_data.password:
+    # Generate username: firstname + 3 random digits (e.g., anita427)
+    first_name = therapist_data.full_name.split()[0].lower()
+    random_digits = ''.join(random.choices(string.digits, k=3))
+    generated_username = f"{first_name}{random_digits}"
+    
+    # Check if username already exists, regenerate if needed
+    existing_username = await db.users.find_one({"username": generated_username})
+    while existing_username:
+        random_digits = ''.join(random.choices(string.digits, k=3))
+        generated_username = f"{first_name}{random_digits}"
+        existing_username = await db.users.find_one({"username": generated_username})
+    
+    # Generate password from DOB (DDMMYY format)
+    # DOB is expected in YYYY-MM-DD format
+    try:
+        dob_parts = therapist_data.date_of_birth.split('-')
+        if len(dob_parts) == 3:
+            year, month, day = dob_parts
+            generated_password = f"{day}{month}{year[-2:]}"  # DDMMYY
+        else:
+            # Fallback to secure random password if DOB format is wrong
+            generated_password = email_service.generate_secure_password()
+    except Exception:
         generated_password = email_service.generate_secure_password()
-    else:
+    
+    # Override with custom password if explicitly provided
+    if therapist_data.password:
         generated_password = therapist_data.password
+    
+    use_email = os.getenv("EMAIL_ENABLED", "false").lower() == "true"
     
     user_dict = {
         "email": therapist_data.email,
+        "username": generated_username,
         "phone": therapist_data.phone,
         "password_hash": get_password_hash(generated_password),
         "role": UserRole.THERAPIST,
         "full_name": therapist_data.full_name,
+        "date_of_birth": therapist_data.date_of_birth,
         "assigned_property_id": therapist_data.assigned_property_id,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
@@ -226,7 +252,9 @@ async def create_therapist(therapist_data: TherapistCreate, current_user: dict =
     
     therapist_dict = therapist_data.model_dump(exclude={"password"})
     therapist_dict["user_id"] = user_id
+    therapist_dict["username"] = generated_username
     therapist_dict["created_at"] = datetime.now(timezone.utc).isoformat()
+    therapist_dict["status"] = "active"
     
     await db.therapists.insert_one(therapist_dict)
     
@@ -237,6 +265,7 @@ async def create_therapist(therapist_data: TherapistCreate, current_user: dict =
             email_result = await email_service.send_therapist_credentials(
                 therapist_email=therapist_data.email,
                 therapist_name=therapist_data.full_name,
+                username=generated_username,
                 password=generated_password,
                 property_name=therapist_data.assigned_property_id
             )
@@ -247,7 +276,8 @@ async def create_therapist(therapist_data: TherapistCreate, current_user: dict =
     
     response = {
         "message": "Therapist created successfully",
-        "user_id": user_id
+        "user_id": user_id,
+        "username": generated_username
     }
     
     # Include password in response if email not sent (for manual sharing)
