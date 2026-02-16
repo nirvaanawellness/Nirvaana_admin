@@ -131,7 +131,8 @@ class TestTherapistWelcomeEmail:
             "phone": f"+91987654{timestamp % 10000:04d}",
             "date_of_birth": "1990-05-15",  # Password will be 150590
             "assigned_property_id": property_name,
-            "monthly_target": 50000
+            "monthly_target": 50000,
+            "experience_years": 2
         }
         
         response = requests.post(
