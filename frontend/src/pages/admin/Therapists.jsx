@@ -421,7 +421,7 @@ const AdminTherapists = ({ user, onLogout }) => {
                   />
                 </div>
                 <Button type="submit" className="w-full" data-testid="submit-therapist-button">
-                  Onboard Therapist
+                  {editingTherapist ? 'Update Therapist' : 'Onboard Therapist'}
                 </Button>
               </form>
             </DialogContent>
