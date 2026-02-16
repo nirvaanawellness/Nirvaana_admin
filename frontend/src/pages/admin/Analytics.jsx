@@ -358,13 +358,13 @@ const Analytics = ({ user, onLogout }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {forecast.historical_data.map((data, idx) => (
+                    {(forecast.historical_data || []).map((data, idx) => (
                       <tr key={idx} className="border-b border-primary/5 hover:bg-primary/5 transition-colors">
                         <td className="py-3 px-4 text-foreground">{data.label}</td>
                         <td className="py-3 px-4 text-right text-foreground font-medium">
-                          ₹{data.revenue.toLocaleString('en-IN')}
+                          ₹{(data.revenue || 0).toLocaleString('en-IN')}
                         </td>
-                        <td className="py-3 px-4 text-right text-muted-foreground">{data.services}</td>
+                        <td className="py-3 px-4 text-right text-muted-foreground">{data.services || 0}</td>
                         <td className="py-3 px-4 text-right text-muted-foreground">
                           {data.services > 0 
                             ? `₹${Math.round(data.revenue / data.services).toLocaleString('en-IN')}`
@@ -377,18 +377,18 @@ const Analytics = ({ user, onLogout }) => {
                     <tr className="bg-amber-50/50 font-medium">
                       <td className="py-3 px-4 text-amber-700 flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
-                        {forecast.forecast_label}
+                        {forecastLabel}
                         <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
                           Forecast
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right text-amber-700">
-                        ₹{forecast.predicted_revenue.toLocaleString('en-IN')}
+                        ₹{(forecast.predicted_revenue || 0).toLocaleString('en-IN')}
                       </td>
-                      <td className="py-3 px-4 text-right text-amber-600">~{forecast.predicted_services}</td>
+                      <td className="py-3 px-4 text-right text-amber-600">~{forecast.predicted_services || 0}</td>
                       <td className="py-3 px-4 text-right text-amber-600">
                         {forecast.predicted_services > 0 
-                          ? `₹${Math.round(forecast.predicted_revenue / forecast.predicted_services).toLocaleString('en-IN')}`
+                          ? `₹${Math.round((forecast.predicted_revenue || 0) / forecast.predicted_services).toLocaleString('en-IN')}`
                           : '-'
                         }
                       </td>
@@ -398,26 +398,42 @@ const Analytics = ({ user, onLogout }) => {
               </div>
             </div>
 
-            {/* Methodology Info */}
-            <div className="glass rounded-2xl p-6 border-l-4 border-primary/50" data-testid="methodology-info">
-              <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-primary mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-foreground mb-2">Forecast Methodology</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    This forecast uses a <strong>Weighted Moving Average combined with Linear Regression</strong>. 
-                    Recent months are weighted more heavily (60% regression, 40% weighted average). 
-                    The confidence level is based on historical data consistency - lower variance means higher confidence.
-                  </p>
-                  <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
-                    <div className="bg-primary/5 rounded-lg p-3">
-                      <span className="text-muted-foreground">Weighted Avg Forecast</span>
-                      <p className="text-foreground font-medium mt-1">
-                        ₹{forecast.weighted_avg_forecast.toLocaleString('en-IN')}
-                      </p>
+            {/* Methodology Info - Only show if we have meaningful data */}
+            {hasData && (
+              <div className="glass rounded-2xl p-6 border-l-4 border-primary/50" data-testid="methodology-info">
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-primary mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-foreground mb-2">Forecast Methodology</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      This forecast uses a <strong>Weighted Moving Average combined with Linear Regression</strong>. 
+                      Recent months are weighted more heavily (60% regression, 40% weighted average). 
+                      The confidence level is based on historical data consistency - lower variance means higher confidence.
+                    </p>
+                    <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+                      <div className="bg-primary/5 rounded-lg p-3">
+                        <span className="text-muted-foreground">Weighted Avg Forecast</span>
+                        <p className="text-foreground font-medium mt-1">
+                          ₹{(forecast.weighted_avg_forecast || 0).toLocaleString('en-IN')}
+                        </p>
+                      </div>
+                      <div className="bg-primary/5 rounded-lg p-3">
+                        <span className="text-muted-foreground">Regression Forecast</span>
+                        <p className="text-foreground font-medium mt-1">
+                          ₹{(forecast.regression_forecast || 0).toLocaleString('en-IN')}
+                        </p>
+                      </div>
+                      <div className="bg-primary/5 rounded-lg p-3">
+                        <span className="text-muted-foreground">Combined (Final)</span>
+                        <p className="text-foreground font-medium mt-1">
+                          ₹{(forecast.predicted_revenue || 0).toLocaleString('en-IN')}
+                        </p>
+                      </div>
                     </div>
-                    <div className="bg-primary/5 rounded-lg p-3">
-                      <span className="text-muted-foreground">Regression Forecast</span>
+                  </div>
+                </div>
+              </div>
+            )}
                       <p className="text-foreground font-medium mt-1">
                         ₹{forecast.regression_forecast.toLocaleString('en-IN')}
                       </p>
