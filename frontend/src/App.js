@@ -16,6 +16,7 @@ import AdminExpenses from './pages/admin/Expenses';
 import AdminSettings from './pages/admin/Settings';
 import AdminAttendance from './pages/admin/Attendance';
 import AdminCustomers from './pages/admin/Customers';
+import AdminAnalytics from './pages/admin/Analytics';
 import './App.css';
 
 function App() {
