@@ -1,26 +1,26 @@
 # Core Framework
-fastapi==0.110.1
-uvicorn==0.25.0
+fastapi>=0.109.0,<0.112.0
+uvicorn>=0.25.0,<0.30.0
 
 # Database
-motor==3.3.1
-pymongo==4.5.0
+motor>=3.3.0,<4.0.0
+pymongo>=4.5.0,<5.0.0
 
 # Authentication
-passlib[bcrypt]==1.7.4
-PyJWT==2.8.0
-python-jose[cryptography]==3.3.0
+passlib[bcrypt]>=1.7.4,<2.0.0
+PyJWT>=2.8.0,<3.0.0
+python-jose[cryptography]>=3.3.0,<4.0.0
 
 # Data Validation
-pydantic==2.5.0
-email-validator==2.1.0
+pydantic>=2.5.0,<3.0.0
+email-validator>=2.0.0,<3.0.0
 
 # HTTP Client (for Resend API)
-httpx==0.27.0
+httpx>=0.27.0,<1.0.0
 
 # Environment & Utils
-python-dotenv==1.0.0
-python-multipart==0.0.6
+python-dotenv>=1.0.0,<2.0.0
+python-multipart>=0.0.6,<1.0.0
 
 # Analytics
-numpy==1.26.4
+numpy>=1.24.0,<2.0.0
