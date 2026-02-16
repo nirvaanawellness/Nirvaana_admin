@@ -111,6 +111,39 @@ const AdminAttendance = ({ user, onLogout }) => {
     setSelectedDate(current.toISOString().split('T')[0]);
   };
 
+  const calculateHoursWorked = (checkIn, checkOut) => {
+    if (!checkIn || !checkOut) return 0;
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
+    const diffMs = end - start;
+    const diffHours = diffMs / (1000 * 60 * 60);
+    return Math.max(0, diffHours);
+  };
+
+  const getCompletionStats = () => {
+    if (!dailyData) return { completedCount: 0, totalHours: 0, avgCompletion: 0 };
+    
+    let completedCount = 0;
+    let totalHours = 0;
+    const totalTherapists = dailyData.total_checked_in + dailyData.total_not_checked_in;
+    
+    dailyData.checked_in?.forEach(record => {
+      if (record.check_in_time && record.check_out_time) {
+        const hours = calculateHoursWorked(record.check_in_time, record.check_out_time);
+        totalHours += hours;
+        if (hours >= 9) {
+          completedCount++;
+        }
+      }
+    });
+    
+    const avgCompletion = totalTherapists > 0 
+      ? Math.round((completedCount / totalTherapists) * 100) 
+      : 0;
+    
+    return { completedCount, totalHours, avgCompletion };
+  };
+
   const formatTime = (isoString) => {
     if (!isoString) return '-';
     return new Date(isoString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
