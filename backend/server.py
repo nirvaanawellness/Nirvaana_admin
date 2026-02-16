@@ -404,6 +404,25 @@ async def delete_therapist(therapist_id: str, current_user: dict = Depends(get_c
     
     return {"message": "Therapist archived successfully. Historical data preserved."}
 
+@api_router.put("/therapists/{therapist_id}")
+async def update_therapist(therapist_id: str, therapist_data: dict, current_user: dict = Depends(get_current_admin)):
+    """Update an existing therapist"""
+    # Remove fields that shouldn't be updated
+    update_fields = {k: v for k, v in therapist_data.items() if k not in ['password', 'email', 'user_id', 'role', 'status']}
+    
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+    
+    result = await db.therapists.update_one(
+        {"user_id": therapist_id},
+        {"$set": update_fields}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Therapist not found")
+    
+    return {"message": "Therapist updated successfully"}
+
 @api_router.put("/therapists/{therapist_id}/restore")
 async def restore_therapist(therapist_id: str, current_user: dict = Depends(get_current_admin)):
     """Restore an archived therapist"""
