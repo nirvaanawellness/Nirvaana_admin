@@ -84,13 +84,24 @@ const AdminTherapists = ({ user, onLogout }) => {
       await axios.post(`${API}/therapists`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      toast.success('Therapist onboarded successfully! Credentials have been sent via email.');
+      
+      // Show credentials in toast if returned (when email not sent)
+      if (response.data.username && response.data.password) {
+        toast.success(
+          `Therapist onboarded! Username: ${response.data.username}, Password: ${response.data.password}`,
+          { duration: 10000 }
+        );
+      } else {
+        toast.success('Therapist onboarded successfully! Credentials have been sent via email.');
+      }
+      
       setDialogOpen(false);
       fetchTherapists();
       setFormData({
         full_name: '',
         phone: '',
         email: '',
+        date_of_birth: '',
         password: '',
         experience_years: '',
         salary_expectation: '',
