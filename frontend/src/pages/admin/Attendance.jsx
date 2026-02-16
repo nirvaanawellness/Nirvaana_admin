@@ -275,12 +275,11 @@ const AdminAttendance = ({ user, onLogout }) => {
             <div className="glass rounded-xl p-4" data-testid="summary-completion">
               <div className="flex items-center gap-2 mb-2">
                 <Clock className="w-5 h-5 text-blue-600" />
-                <span className="text-sm text-muted-foreground">Completion Rate</span>
+                <span className="text-sm text-muted-foreground">Completion (9+ hrs)</span>
               </div>
-              <p className="text-2xl font-semibold">
-                {dailyData.total_checked_in + dailyData.total_not_checked_in > 0 
-                  ? Math.round((dailyData.total_checked_in / (dailyData.total_checked_in + dailyData.total_not_checked_in)) * 100)
-                  : 0}%
+              <p className="text-2xl font-semibold">{completionStats.avgCompletion}%</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {completionStats.completedCount} of {dailyData.total_checked_in + dailyData.total_not_checked_in} completed
               </p>
             </div>
           </div>
