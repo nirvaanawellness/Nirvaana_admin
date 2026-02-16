@@ -776,7 +776,7 @@ const AdminReports = ({ user, onLogout }) => {
               <span className="text-xs text-muted-foreground">GST Collected</span>
             </div>
             <p className="text-xl font-medium text-blue-600">₹{summary.gstCollected.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground mt-1">18% GST</p>
+            <p className="text-xs text-muted-foreground mt-1">5% GST</p>
           </div>
           
           <div className="glass rounded-2xl p-4">
