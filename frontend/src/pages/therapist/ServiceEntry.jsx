@@ -51,7 +51,7 @@ const TherapistServiceEntry = ({ user, onLogout }) => {
 
   const handleBasePrice = (value) => {
     const price = parseFloat(value) || 0;
-    const gst = price * 0.18;
+    const gst = price * 0.05;
     const total = price + gst;
     setCalculatedAmounts({ gst: gst.toFixed(2), total: total.toFixed(2) });
     setFormData({ ...formData, base_price: value });
