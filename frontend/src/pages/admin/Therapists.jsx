@@ -73,6 +73,41 @@ const AdminTherapists = ({ user, onLogout }) => {
     return { activeTherapists: active, archivedTherapists: archived };
   }, [therapists]);
 
+  const resetForm = () => {
+    setFormData({
+      full_name: '',
+      phone: '',
+      email: '',
+      date_of_birth: '',
+      password: '',
+      experience_years: '',
+      salary_expectation: '',
+      address: '',
+      bank_details: '',
+      assigned_property_id: '',
+      monthly_target: ''
+    });
+    setEditingTherapist(null);
+  };
+
+  const handleEdit = (therapist) => {
+    setEditingTherapist(therapist);
+    setFormData({
+      full_name: therapist.full_name || '',
+      phone: therapist.phone || '',
+      email: therapist.email || '',
+      date_of_birth: therapist.date_of_birth || '',
+      password: '',
+      experience_years: therapist.experience_years?.toString() || '',
+      salary_expectation: therapist.salary_expectation?.toString() || '',
+      address: therapist.address || '',
+      bank_details: therapist.bank_details || '',
+      assigned_property_id: therapist.assigned_property_id || '',
+      monthly_target: therapist.monthly_target?.toString() || ''
+    });
+    setDialogOpen(true);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
