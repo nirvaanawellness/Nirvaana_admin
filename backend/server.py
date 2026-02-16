@@ -26,7 +26,6 @@ from auth import (
     get_password_hash, verify_password, create_access_token,
     get_current_user, get_current_admin, security
 )
-from whatsapp_service import whatsapp_service
 from email_service import email_service
 
 mongo_url = os.environ['MONGO_URL']
