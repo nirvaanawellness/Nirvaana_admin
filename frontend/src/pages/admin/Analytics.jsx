@@ -82,29 +82,34 @@ const Analytics = ({ user, onLogout }) => {
 
   // Prepare chart data from historical + forecast
   const chartData = forecast ? [
-    ...forecast.historical_data.map(d => ({
+    ...(forecast.historical_data || []).map(d => ({
       month: d.label,
-      revenue: d.revenue,
-      services: d.services,
+      revenue: d.revenue || 0,
+      services: d.services || 0,
       isForecast: false
     })),
-    {
+    ...(forecast.forecast_label ? [{
       month: forecast.forecast_label,
-      revenue: forecast.predicted_revenue,
-      services: forecast.predicted_services,
+      revenue: forecast.predicted_revenue || 0,
+      services: forecast.predicted_services || 0,
       isForecast: true
-    }
+    }] : [])
   ] : [];
 
+  // Check if we have meaningful data (method !== insufficient_data)
+  const hasData = forecast && forecast.method !== 'insufficient_data';
+  const forecastLabel = forecast?.forecast_label || 
+    (forecast ? `${forecast.forecast_year}-${String(forecast.forecast_month).padStart(2, '0')}` : '');
+
   const getTrendIcon = () => {
-    if (!forecast) return <Minus className="w-5 h-5" />;
+    if (!forecast || !forecast.trend) return <Minus className="w-5 h-5" />;
     if (forecast.trend === 'growing') return <TrendingUp className="w-5 h-5 text-green-600" />;
     if (forecast.trend === 'declining') return <TrendingDown className="w-5 h-5 text-red-600" />;
     return <Minus className="w-5 h-5 text-muted-foreground" />;
   };
 
   const getTrendColor = () => {
-    if (!forecast) return 'text-muted-foreground';
+    if (!forecast || !forecast.trend) return 'text-muted-foreground';
     if (forecast.trend === 'growing') return 'text-green-600';
     if (forecast.trend === 'declining') return 'text-red-600';
     return 'text-muted-foreground';
