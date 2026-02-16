@@ -53,6 +53,10 @@ async def init_admin():
         if existing:
             return {"message": "Admin already exists", "email": existing.get("email")}
         
+        # Hash password with explicit encoding
+        password = "admin123"
+        password_hash = get_password_hash(password.encode('utf-8').decode('utf-8'))
+        
         admin_data = {
             "email": "nirvaanabysunrise@gmail.com",
             "username": "admin",
@@ -60,7 +64,7 @@ async def init_admin():
             "full_name": "Admin User",
             "role": "super_admin",
             "status": "active",
-            "password_hash": get_password_hash("admin123"),
+            "password_hash": password_hash,
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         
