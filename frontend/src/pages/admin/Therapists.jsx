@@ -286,15 +286,16 @@ const AdminTherapists = ({ user, onLogout }) => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="password">Initial Password (optional)</Label>
+                    <Label htmlFor="date_of_birth">Date of Birth *</Label>
                     <Input
-                      id="password"
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      placeholder="Leave blank to auto-generate"
-                      data-testid="password-input"
+                      id="date_of_birth"
+                      type="date"
+                      value={formData.date_of_birth}
+                      onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                      required
+                      data-testid="dob-input"
                     />
+                    <p className="text-xs text-muted-foreground mt-1">Used to generate password (DDMMYY format)</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
