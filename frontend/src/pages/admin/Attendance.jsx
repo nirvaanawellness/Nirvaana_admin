@@ -310,7 +310,9 @@ const AdminAttendance = ({ user, onLogout }) => {
                 </TableHeader>
                 <TableBody>
                   {/* Checked in therapists */}
-                  {dailyData.checked_in.map((record, index) => (
+                  {dailyData.checked_in.map((record, index) => {
+                    const hoursWorked = calculateHoursWorked(record.check_in_time, record.check_out_time);
+                    return (
                     <TableRow key={`in-${index}`} data-testid={`attendance-row-${record.therapist_id}`}>
                       <TableCell className="font-medium">{record.therapist_name}</TableCell>
                       <TableCell>
@@ -335,6 +337,15 @@ const AdminAttendance = ({ user, onLogout }) => {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
+                      <TableCell>
+                        {record.check_out_time ? (
+                          <span className={`font-medium ${hoursWorked >= 9 ? 'text-green-600' : 'text-amber-600'}`}>
+                            {hoursWorked.toFixed(1)}h
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
                       <TableCell>{getStatusBadge(record)}</TableCell>
                       <TableCell className="text-right">
                         <Button
@@ -348,7 +359,8 @@ const AdminAttendance = ({ user, onLogout }) => {
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                   
                   {/* Not checked in therapists */}
                   {dailyData.not_checked_in.map((therapist, index) => (
