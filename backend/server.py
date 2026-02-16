@@ -571,8 +571,6 @@ async def create_service_entry(service_data: ServiceEntryCreate, current_user: d
         "date": service_date,
         "time": now.strftime("%H:%M:%S"),
         "locked": True,
-        "whatsapp_sent": False,
-        "whatsapp_status": "pending",
         "feedback_email_sent": False,
         "created_at": now.isoformat()
     })
@@ -616,41 +614,12 @@ async def create_service_entry(service_data: ServiceEntryCreate, current_user: d
             logger.error(f"Failed to send feedback email for service {service_id}: {str(e)}")
             feedback_status = f"error: {str(e)}"
     
-    # Send WhatsApp feedback message (still mocked)
-    try:
-        whatsapp_result = await whatsapp_service.send_feedback_message(
-            customer_phone=service_data.customer_phone,
-            customer_name=service_data.customer_name,
-            therapy_type=service_data.therapy_type,
-            property_name=property_name,
-            therapist_name=therapist_name
-        )
-        
-        # Update service entry with WhatsApp status
-        await db.services.update_one(
-            {"_id": result.inserted_id},
-            {
-                "$set": {
-                    "whatsapp_sent": whatsapp_result["success"],
-                    "whatsapp_status": whatsapp_result["status"],
-                    "whatsapp_message_id": whatsapp_result.get("message_id")
-                }
-            }
-        )
-        
-        logger.info(f"WhatsApp message status for service {service_id}: {whatsapp_result['status']}")
-        
-    except Exception as e:
-        logger.error(f"Failed to send WhatsApp for service {service_id}: {str(e)}")
-        # Don't fail the service entry if WhatsApp fails
-    
     return {
         "message": "Service entry created successfully",
         "service_id": service_id,
         "gst_amount": gst_amount,
         "total_amount": total_amount,
-        "feedback_email_status": feedback_status,
-        "whatsapp_note": "WhatsApp feedback is mocked (placeholder)"
+        "feedback_email_status": feedback_status
     }
 
 @api_router.get("/services/my-services")
