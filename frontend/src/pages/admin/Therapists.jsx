@@ -22,6 +22,7 @@ const AdminTherapists = ({ user, onLogout }) => {
     full_name: '',
     phone: '',
     email: '',
+    date_of_birth: '',
     password: '',
     experience_years: '',
     salary_expectation: '',
