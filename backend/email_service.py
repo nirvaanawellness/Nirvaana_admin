@@ -156,8 +156,10 @@ We're excited to have you join our team at {property_name}.
 Your login credentials for the Internal Operations Portal:
 
 Portal URL: {self.portal_url}
-Email: {therapist_email}
+Username: {username}
 Password: {password}
+
+(You can also login using your email: {therapist_email})
 
 IMPORTANT: Please change your password after first login.
 
