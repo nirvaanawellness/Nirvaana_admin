@@ -92,7 +92,8 @@ class TherapistCreate(BaseModel):
     full_name: str
     phone: str
     email: str
-    password: Optional[str] = None  # Optional - will be auto-generated if not provided
+    date_of_birth: str  # Format: YYYY-MM-DD (for password generation as DDMMYY)
+    password: Optional[str] = None  # Optional - will be auto-generated from DOB if not provided
     experience_years: float
     salary_expectation: Optional[float] = None
     address: Optional[str] = None
