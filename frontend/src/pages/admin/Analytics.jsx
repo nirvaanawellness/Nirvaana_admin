@@ -169,6 +169,23 @@ const Analytics = ({ user, onLogout }) => {
           </div>
         ) : forecast ? (
           <>
+            {/* Insufficient Data Message */}
+            {!hasData && (
+              <div className="glass rounded-2xl p-6 border-l-4 border-amber-500 mb-4">
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-amber-500 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-foreground mb-1">Insufficient Data</h4>
+                    <p className="text-sm text-muted-foreground">
+                      There isn't enough historical sales data to generate an accurate forecast. 
+                      The prediction below is based on limited data and may not be reliable.
+                      Add more service entries to improve forecast accuracy.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Forecast Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Next Month Forecast */}
@@ -179,22 +196,24 @@ const Analytics = ({ user, onLogout }) => {
                       Forecast for {new Date(forecast.forecast_year, forecast.forecast_month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                     </p>
                     <h2 className="text-3xl font-serif text-foreground">
-                      ₹{forecast.predicted_revenue.toLocaleString('en-IN')}
+                      ₹{(forecast.predicted_revenue || 0).toLocaleString('en-IN')}
                     </h2>
                     <p className="text-sm text-muted-foreground mt-1">
-                      ~{forecast.predicted_services} services expected
+                      ~{forecast.predicted_services || 0} services expected
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${getConfidenceColor()}`}>
-                      {forecast.confidence.toUpperCase()} confidence
+                      {(forecast.confidence || 'unknown').toUpperCase()} confidence
                     </span>
-                    <div className={`flex items-center gap-1 ${getTrendColor()}`}>
-                      {getTrendIcon()}
-                      <span className="text-sm font-medium">
-                        {forecast.growth_rate_percent > 0 ? '+' : ''}{forecast.growth_rate_percent}%
-                      </span>
-                    </div>
+                    {hasData && (
+                      <div className={`flex items-center gap-1 ${getTrendColor()}`}>
+                        {getTrendIcon()}
+                        <span className="text-sm font-medium">
+                          {(forecast.growth_rate_percent || 0) > 0 ? '+' : ''}{forecast.growth_rate_percent || 0}%
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -208,7 +227,7 @@ const Analytics = ({ user, onLogout }) => {
                   <span className="text-sm text-muted-foreground">Trend</span>
                 </div>
                 <p className={`text-xl font-medium capitalize ${getTrendColor()}`}>
-                  {forecast.trend}
+                  {forecast.trend || 'N/A'}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Based on 6-month analysis
@@ -224,10 +243,10 @@ const Analytics = ({ user, onLogout }) => {
                   <span className="text-sm text-muted-foreground">Method</span>
                 </div>
                 <p className="text-sm font-medium text-foreground">
-                  Weighted Moving Average
+                  {hasData ? 'Weighted Moving Average' : 'Insufficient Data'}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  + Linear Regression
+                  {hasData ? '+ Linear Regression' : 'Add more entries'}
                 </p>
               </div>
             </div>
