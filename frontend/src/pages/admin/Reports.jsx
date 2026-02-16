@@ -1068,7 +1068,7 @@ const AdminReports = ({ user, onLogout }) => {
                 <p className="font-medium text-foreground">Settlement Explanation:</p>
                 <ul className="list-disc list-inside space-y-1">
                   <li><strong>Base Exp:</strong> Expected share of BASE revenue (Share % applied on Base Amount only)</li>
-                  <li><strong>GST Liab:</strong> GST liability proportionate to base share (Base Share × 18%)</li>
+                  <li><strong>GST Liab:</strong> GST liability proportionate to base share (Base Share × 5%)</li>
                   <li><strong>Total Exp:</strong> Expected TOTAL = Base Expected + GST Liability</li>
                   <li><strong>Received:</strong> Actual GROSS amount collected by each party</li>
                   <li><strong>Settlement:</strong> Difference between Expected Total and Received</li>
