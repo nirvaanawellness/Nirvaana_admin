@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { 
   Building2, Users, Package, FileText, Award,
   DollarSign, TrendingUp, UserCheck, Filter, X, Download, Receipt,
-  ChevronLeft, ChevronRight, RotateCcw, ClipboardCheck, Users2
+  ChevronLeft, ChevronRight, RotateCcw, ClipboardCheck, Users2, BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
