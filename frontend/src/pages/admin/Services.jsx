@@ -124,9 +124,13 @@ const AdminServices = ({ user, onLogout }) => {
                 data-testid="date-to-input"
               />
             </div>
-            <div className="flex items-end">
-              <Button onClick={handleFilter} className="w-full" data-testid="apply-filter-button">
+            <div className="flex items-end gap-2">
+              <Button onClick={handleFilter} className="flex-1" data-testid="apply-filter-button">
                 Apply Filters
+              </Button>
+              <Button onClick={exportToExcel} variant="outline" data-testid="export-excel-button">
+                <Download className="w-4 h-4 mr-2" />
+                Excel
               </Button>
             </div>
           </div>
