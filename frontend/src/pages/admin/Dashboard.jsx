@@ -627,6 +627,20 @@ const AdminDashboard = ({ user, onLogout }) => {
               </div>
             </div>
           </Link>
+
+          <Link to="/admin/analytics">
+            <div className="glass rounded-2xl p-6 hover:shadow-float transition-all cursor-pointer" data-testid="analytics-nav">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                  <BarChart3 className="w-6 h-6 text-amber-600" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-foreground">Analytics</h3>
+                  <p className="text-sm text-muted-foreground">Revenue forecast</p>
+                </div>
+              </div>
+            </div>
+          </Link>
         </div>
       </div>
 
