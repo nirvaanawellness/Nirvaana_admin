@@ -372,7 +372,7 @@ const AdminAttendance = ({ user, onLogout }) => {
                           {therapist.assigned_property}
                         </div>
                       </TableCell>
-                      <TableCell colSpan={2} className="text-center text-red-600">
+                      <TableCell colSpan={3} className="text-center text-red-600">
                         Not signed in today
                       </TableCell>
                       <TableCell>
