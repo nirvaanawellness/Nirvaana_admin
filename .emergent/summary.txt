@@ -1,186 +1,185 @@
 <analysis>**original_problem_statement:**
-Build a secure, scalable, mobile-first internal operations management application for a spa operations company named Nirvaana Wellness. The system should function as a complete internal Spa Operations ERP, handling property and therapist management, attendance, sales tracking, GST automation, revenue sharing, incentives, monthly settlements, and automated WhatsApp feedback.
+Build a secure, scalable, mobile-first internal operations management application for a spa operations company named Nirvaana Wellness. The system should function as a complete internal Spa Operations ERP, handling property and therapist management, attendance, sales tracking, GST automation, revenue sharing, incentives, monthly settlements, and automated feedback.
 
 **LATEST PRODUCT REQUIREMENTS:**
-- **UI & Branding**: A shared header with a large logo and Nirvaana Wellness in golden letters should appear on all pages.
-- **Data Management (Archiving)**: Deleting a property or therapist should not remove them from the database. Instead, they should be moved to an archived state, remaining accessible for historical reporting but removed from active dropdowns. UI should show Active and Past (Archived) sections.
-- **Security**: Implement an OTP-based password change feature for the admin user. The OTP should be sent to the admin's registered email.
-- **Analytics & Forecasting**: Implement a full analytics dashboard, including a graph that forecasts next month's revenue using a weighted moving average or regression analysis.
-- **Attendance Tracking**: The admin must be able to see a daily log of therapist sign-ins and sign-outs to monitor punctuality. Historical attendance records for active therapists must be available.
+- **UI & Branding**: A shared header with a large logo and Nirvaana Wellness in golden letters should appear on all pages. (DONE)
+- **Data Management (Archiving)**: Deleting a property or therapist should not remove them from the database. Instead, they should be moved to an archived state. (DONE & TESTED)
+- **Security & Login**:
+    - Implement an OTP-based password change feature for the admin user. (DONE & TESTED)
+    - Admin should be able to log in using a username () in addition to email. (DONE & TESTED)
+    - Admin's primary email for notifications should be . (DONE)
+- **Therapist Management**:
+    - Credentials should be auto-generated (username:  + 3 digits, password:  from DOB) and emailed upon creation. (In Progress)
+- **Analytics & Reporting**:
+    - Implement a full analytics dashboard, including a graph that forecasts next month's revenue. (Backend Ready, UI Pending)
+    - Create a customer directory of unique clients (by phone number) with search and Excel export functionality. (DONE & TESTED)
+- **Attendance Tracking**: The admin must be able to see a daily log of therapist sign-ins and sign-outs. (DONE & TESTED)
+- **Customer Engagement**: Automatically send a feedback request email to the customer after a service is completed. (In Progress)
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application with a React frontend and FastAPI backend. It features role-based authentication and management modules for properties and therapists.
-
-Key completed features include:
-- **GST-Accurate Reporting**: A comprehensive Reports module that correctly separates Base Revenue and GST for all financial calculations, including profit and partner settlements. The P&L report shows data for the selected period, current month, and all-time.
-- **Branding**: A new shared header component with the company logo and name has been created and applied to all main admin pages.
-- **Archiving System UI**: The backend models (, ) and API endpoints have been updated to support a  field ('active'/'archived'). The frontend pages for Properties and Therapists have been updated to display active and archived items separately.
-- **Admin Settings UI**: A new settings page has been created with the UI for initiating an OTP-based password change.
+A full-stack application with a React frontend and FastAPI backend. It features role-based authentication (admin, therapist) and several completed modules:
+-   **Property & Therapist Management**: Full CRUD operations with a soft-delete/archiving system.
+-   **GST-Accurate Reporting**: A comprehensive module for calculating sales, P&L, and partner settlements.
+-   **Therapist Attendance**: Therapists can sign in/out, and admins have a detailed dashboard to monitor daily and historical attendance.
+-   **Customer Directory**: An admin page lists all unique customers, their visit history, and total spending, with search and Excel export.
+-   **Authentication**: Admin can log in with a username or email. A secure OTP flow for password changes is implemented (currently in dev mode).
+-   **Email Service**: An  file is in place, and backend logic is updated to trigger emails for therapist onboarding and customer feedback. The user has provided a Resend API key to enable this.
 
 **Last working item**:
-- **Last item agent was working**: The agent was testing the newly created  backend endpoint after implementing a large batch of features including the shared header, archiving system, and OTP password change UI/backend scaffolding. The user interrupted with a new feature request for therapist attendance tracking.
-- **Status**: IN PROGRESS
-- **Agent Testing Done**: N
-- **Which testing method agent to use?**: both
-- **User Testing Done**: N
+-   **Last item agent was working**: The agent received the user's Resend API key () and was tasked with configuring it to enable all automated email features. This includes setting the sender address to  and testing the entire email flow.
+-   **Status**: IN PROGRESS
+-   **Agent Testing Done**: N
+-   **Which testing method agent to use?**: both
+-   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-- **Issue 1**: Complete implementation and testing of new features (P0)
-- **Issue 2**: Implement Therapist Attendance Tracking (P0)
+-   **Issue 1**: Configure and Test Resend Email Integration (P0)
+-   **Issue 2**: Build Analytics Dashboard UI (P1)
 
 **Issues Detail:**
-- **Issue 1: Complete implementation and testing of new features (P0)**
-    - **Attempted fixes**: The agent has created the UI, backend models, and API endpoints for archiving and OTP password change. A forecast endpoint has also been added. However, the end-to-end flows are not tested.
-    - **Next debug checklist**:
-        1.  **OTP Password Change**: Test the  and  endpoints. Ensure emails are sent and passwords are changed correctly.
-        2.  **Archiving**: Test the  endpoints for  and  to confirm they set the  to 'archived' instead of deleting the record. Verify that archived items appear in the correct section of the UI.
-        3.  **Forecasting**: Test the  endpoint with sample data.
-    - **Why fix this issue and what will be achieved with the fix?**: To complete the user-requested features for improved security (OTP), data integrity (archiving), and branding.
-    - **Status**: IN PROGRESS
-    - **Is recurring issue?**: N
-    - **Should Test frontend/backend/both after fix?**: both
-    - **Blocked on other issue**: None
+-   **Issue 1: Configure and Test Resend Email Integration (P0)**
+    -   **Attempted fixes**: The backend (, ) and frontend forms have been prepared to handle email triggers. The user has provided the necessary Resend API key after starting their domain verification process.
+    -   **Next debug checklist**:
+        1.  Add the Resend API key to  as .
+        2.  Update  to use this key and set the  address to .
+        3.  Restart the backend service to load the new environment variable.
+        4.  **Test Case 1 (Therapist Onboarding)**: Create a new therapist and verify they receive a welcome email with their auto-generated username and password.
+        5.  **Test Case 2 (Customer Feedback)**: Create a new service with a customer email and verify a feedback email is sent.
+        6.  **Test Case 3 (Admin OTP)**: Trigger the admin password reset flow and verify the OTP email is sent to .
+    -   **Why fix this issue and what will be achieved with the fix?**: This will activate critical automated communication flows for therapist onboarding and customer feedback, which are core operational requirements.
+    -   **Status**: IN PROGRESS
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: both
+    -   **Blocked on other issue**: None
 
-- **Issue 2: Implement Therapist Attendance Tracking (P0)**
-    - **Attempted fixes**: None. This is a new requirement.
-    - **Next debug checklist**:
-        1.  **Backend**:
-            - Create a new MongoDB collection  with schema: .
-            - Create API endpoints for therapists to sign in and sign out.
-            - Create an API endpoint for admins to view daily and historical attendance records.
-        2.  **Frontend**:
-            - Add Sign In/Sign Out functionality to the therapist dashboard.
-            - Create a new admin page () to display the attendance logs with filters.
-    - **Why fix this issue and what will be achieved with the fix?**: Fulfills a core operational requirement for managing therapist punctuality and presence.
-    - **Status**: NOT STARTED
-    - **Is recurring issue?**: N
-    - **Should Test frontend/backend/both after fix?**: both
-    - **Blocked on other issue**: None
+-   **Issue 2: Build Analytics Dashboard UI (P1)**
+    -   **Attempted fixes**: The backend endpoint  is complete and tested. No frontend work has started.
+    -   **Next debug checklist**:
+        1.  Create a new page component at .
+        2.  Use the  library to fetch data from the  endpoint and display the revenue forecast graph.
+        3.  Add the new route to  and a navigation link on the .
+    -   **Why fix this issue and what will be achieved with the fix?**: It will provide admins with a visual tool for business intelligence and forecasting, completing a key product requirement.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: frontend
+    -   **Blocked on other issue**: None
 
 **In progress Task List**:
-- **Task 1: Finalize New Features (Branding, Archive, OTP, Forecast)**
-    - **Where to resume**: The agent was about to test the  endpoint. The next step is to systematically test all the new backend endpoints (OTP, archive, forecast) and then integrate the forecast data into a new frontend analytics dashboard.
-    - **What will be achieved with this?**: A fully functional set of user-requested features, including a branded UI, a non-destructive archiving system, a secure admin password reset flow, and the backend for a new analytics dashboard.
-    - **Status**: IN PROGRESS
-    - **Should Test frontend/backend/both after fix?**: both
-    - **Blocked on something**: None
+-   **Task 1: Finalize Email Automation**
+    -   **Where to resume**: Add the user-provided Resend API key to the  file. Then, modify  to utilize the key and set the sender email.
+    -   **What will be achieved with this?**: A fully functional email system for therapist onboarding, customer feedback, and admin OTPs, sent from the user's verified domain ().
+    -   **Status**: IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?**: both
+    -   **Blocked on something**: None
 
 **Upcoming and Future Tasks**
-- **Upcoming Tasks**:
-    - **(P0)** Build the full analytics dashboard UI to display the revenue forecast graph and other charts.
-- **Future Tasks**:
-    - **(P1)** Implement the automated monthly closing system to lock records.
-    - **(P2)** Implement a functional SMS backup system for notifications.
-    - **(P3)** Implement the optional feature to email therapist ID proofs/photos to .
+-   **Upcoming Tasks**:
+    -   **(P1)** Build the full analytics dashboard UI to display the revenue forecast graph.
+-   **Future Tasks**:
+    -   **(P2)** Implement the automated monthly closing system to lock records for historical accuracy.
+    -   **(P3)** Implement a functional SMS backup system for notifications.
 
 **Completed work in this session**
-- **GST-Accurate Financial Reporting**:
-    - Refactored  and  to correctly separate Base Revenue from GST in all calculations.
-    - Implemented a highly detailed Sales Report dialog with transparent settlement logic.
-    - Updated the P&L Report dialog to show three segments (Selection, Current Period, All-Time) and use the correct profit formula: .
-    - Successfully validated the new logic using the .
-- **UI Branding & Refactoring**:
-    - Created a shared header component  with the logo and brand name.
-    - Applied the new header across the , , , and  pages.
-- **Archiving System (Soft Delete)**:
-    - Updated  and  Pydantic models with a  field.
-    - Modified backend endpoints in  to archive items instead of deleting them.
-    - Revamped  and  to display Active and Archived sections.
-- **Admin Settings & OTP**:
-    - Created  for account management.
-    - Implemented the UI dialog for the OTP password change flow.
-    - Added  model and related API endpoints (, ) to .
-- **Dependencies**: Installed  for the forecasting feature.
+-   **Therapist Attendance Tracking**: Implemented a complete attendance system. Therapists can sign-in/out, and admins have a dedicated page to view daily logs, summaries, and historical attendance. (Validated with )
+-   **Username-based Admin Login**: Modified the backend and frontend to allow admin login using the username  in addition to email.
+-   **Admin Email Update**: Updated the admin user's primary email to .
+-   **Customer Directory & Excel Export**: Created a new admin page listing unique customers with their visit history and total spend. Includes search and an Export to Excel feature.
+-   **Service Menu Update**: Updated the list of available therapies in the service entry form per the user's official menu.
+-   **System-Generated Therapist Credentials**: Added a Date of Birth field and updated the backend to auto-generate a username and a password () for new therapists.
+-   **Customer Email Capture**: Added a Customer Email field to the service entry form to enable sending automated feedback emails.
 
 **Earlier issues found/mentioned but not fixed**
-- A functional SMS backup system for notifications is still pending.
+-   A functional SMS backup system for notifications is still pending and is a future task (P3).
 
 **Known issue recurrence from previous fork**
-- None.
+-   None.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Frontend**: React, Tailwind CSS, shadcn/ui, Recharts
-- **Backend**: FastAPI, Pydantic
-- **Database**: MongoDB
-- **Authentication**: JWT, OTP (new)
-- **Analytics**: Numpy (new)
+-   **Frontend**: React, Tailwind CSS, shadcn/ui, Recharts,  (for Excel export)
+-   **Backend**: FastAPI, Pydantic, Numpy
+-   **Database**: MongoDB
+-   **Authentication**: JWT, OTP
+-   **3rd Party**: Resend (for emails)
 
 **key DB schema**
-- **User**: {..., status: str}
-- **Property**: {..., status: str}
-- **Service**: {customer_name, base_price, gst_amount, total_amount, ...}
-- **Expense**: {property_id, amount, date, ...}
-- **OTP**: {email, otp_code, created_at, expires_at}
+-   **User**: {..., username: str, email: str, password: str, role: str, status: str, dob: date}
+-   **Property**: {..., status: str}
+-   **Service**: {..., customer_name: str, customer_phone: str, customer_email: str, base_price: float}
+-   **Attendance**: {therapist_id, sign_in_time, sign_out_time, date}
+-   **OTP**: {email, otp_code, created_at, expires_at}
 
 **changes in tech stack**
-- Added  to the backend for data analysis.
+-   Added  library to the frontend for Excel export.
+-   Preparing to fully integrate  for all email communications.
 
 **All files of reference**
-- : Contains new endpoints for archiving, OTP, and forecasting.
-- : New shared header component.
-- : New page for password change.
-- : Updated with active/archive logic.
-- : Updated with active/archive logic.
-- : Contains the correct GST-aware reporting logic.
-- : Contains the new route for the settings page.
+-   : Contains new endpoints for attendance and customers; modified endpoints for auth and therapist creation.
+-   : New file for handling all email sending via Resend.
+-   : New page for viewing therapist attendance.
+-   : New page for the customer directory.
+-   : Modified to include DOB field in the therapist creation form.
+-   : Modified to include the customer email field in the service entry form.
+-   : Modified to allow login with Username or Email.
 
 **Areas that need refactoring**:
--  is now over 1000 lines and contains logic for auth, CRUD for all models, reporting, OTP, and forecasting. It should be broken down into separate router files for better organization (e.g., , , ).
+-    has become very large. It should be refactored by splitting the logic into multiple FastAPI router files (e.g., , , ) for better maintainability.
 
 **key api endpoints**
-- **New Endpoints**:
-    - 
-    - 
-    - 
-- **Modified Endpoints**:
-    - ,  (now supports  filter and soft delete)
-    - ,  (now supports  filter and soft delete)
+-   **New Endpoints**:
+    -   
+    -   
+    -   
+-   **Modified Endpoints**:
+    -   : Now accepts  or .
+    -   : Now auto-generates credentials from  and  and triggers a welcome email.
+    -   : Now captures  and triggers a feedback email.
+    -   : Now accepts  or  to find the user.
 
 **Critical Info for New Agent**
-- You are in the middle of a large feature implementation. The previous agent has built the frontend UI and backend scaffolding for several features (branding, archiving, OTP, forecast) but has not completed end-to-end testing.
-- Your immediate priority (P0) is to complete and test these features, starting with the backend logic.
-- A new high-priority (P0) request for therapist attendance tracking has just been made. This needs to be planned and implemented from scratch.
-- The core financial reporting logic is now correct and has been tested. Do not change it unless explicitly requested.
+-   The user has provided their Resend API key: .
+-   Your immediate task is to add this key to  and update  to send all application emails (admin OTPs, therapist welcome, customer feedback) from .
+-   After configuring the key, you must test all three email flows to confirm they are working end-to-end.
+-   The user is in the process of verifying their domain () with Resend. The implementation should proceed with the assumption that this will be successful.
+-   Many features were built and tested in this session (Attendance, Customer Directory, Username Login). Trust the existing tested components and focus on the email integration.
 
 **documents and test reports created in this job**
-- 
--  (Validates the GST reporting fixes)
+-    (Validates Attendance, Archiving, and OTP features).
+-    was updated during the session and should be reviewed.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Requested the P&L report be split into three segments: Selection-based, Current Period, and All-Time.
-2.  **Agent**: Implemented the three-segment P&L report. (COMPLETE)
-3.  **Agent**: Took a screenshot verifying the new P&L dialog. (COMPLETE)
-4.  **Agent**: Prepared to finish the task.
-5.  **User**: Provided a new list of requirements: large logo in a golden-lettered header, archiving system for properties/therapists, admin password change with OTP, and a forecast graph.
-6.  **Agent**: Acknowledged the new requirements and began analysis. (IN PROGRESS)
-7.  **Agent**: Proposed an implementation plan via .
-8.  **User**: Provided answers to the agent's clarifying questions (OTP via email, dark header, forecasting method choice).
-9.  **Agent**: Started implementing all features in a large batch. (IN PROGRESS)
-10. **User (LATEST)**: Confirmed a recharge and added a new requirement for therapist attendance tracking (sign-in/sign-out log). (NOT STARTED)
+1.  **User**: Asks about free options for sending customer feedback links.
+2.  **Agent**: Recommends Resend for emails and asks for confirmation to proceed.
+3.  **User**: Confirms and agrees to capture customer email for automatic feedback.
+4.  **User**: Postpones sharing the API key and requests a new feature: a customer directory with Excel export.
+5.  **User**: Provides an updated list of official therapy types for the service menu.
+6.  **User**: Asks about email sender identity, system-generated therapist credentials, and how to start with Resend.
+7.  **User**: Shares a screenshot of the Resend domain verification page with DNS records.
+8.  **User**: Asks for clarification on how to create the API key in Resend.
+9.  **User**: Confirms the Permission for the API key is All domains.
+10. **User (LATEST)**: Provides the Resend API key () and asks the agent to configure it and test all email functionalities, ensuring therapist and customer emails are captured correctly. (PENDING ACTION)
 
 **Project Health Check:**
-- **Broken**: End-to-end flows for OTP password change and archiving are not yet tested. The forecasting feature is backend-only and not connected to any UI.
-- **Mocked**: WhatsApp & SMS notifications are still placeholders.
+-   **Broken**: No emails are being sent because the Resend API key is not yet configured in the environment.
+-   **Mocked**: SMS notifications remain a placeholder for a future task.
 
 **3rd Party Integrations**
-- **Resend**: Used for transactional emails (therapist onboarding, OTP). Requires a User API Key.
-- **Numpy**: Used for backend calculations (forecasting).
+-   **Resend**: For all transactional emails (therapist onboarding, customer feedback, admin OTP). Requires a User API Key (which has been provided).
+-   **Numpy**: Used for backend forecasting calculations.
 
 **Testing status**
-- **Testing agent used after significant changes**: YES, for the GST reporting feature. The latest batch of features has not been tested.
-- **Troubleshoot agent used after agent stuck in loop**: NO
-- **Test files created**: []
-- **Known regressions**: None.
+-   **Testing agent used after significant changes**: YES, the  successfully validated the Attendance, Archiving, and OTP features.
+-   **Troubleshoot agent used after agent stuck in loop**: NO
+-   **Test files created**: []
+-   **Known regressions**: None
 
 **Credentials to test flow:**
-- **Admin**: Email: , Password: 
-- **Therapist**: Email: , Password: 
+-   **Admin**: Username:  (or Email: ), Password: 
+-   **Therapist**: Credentials are now auto-generated. Create a new therapist to test. The username is  + 3 random digits, and the password is their DOB in  format.
 
 **What agent forgot to execute**
-- The agent batched a large number of features together without incremental testing, increasing the risk of integration bugs.
-- The agent proceeded with implementation before getting explicit user approval on the proposed plan from the  tool, although the user did answer clarifying questions.</analysis>
+-   The agent created  before getting the full integration playbook context, but the implementation is standard and should be easily configurable. The next agent should add the provided API key to the  file and proceed with testing.</analysis>
