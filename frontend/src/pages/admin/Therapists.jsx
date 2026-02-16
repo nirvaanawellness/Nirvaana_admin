@@ -206,11 +206,20 @@ const AdminTherapists = ({ user, onLogout }) => {
             Restore
           </Button>
         ) : (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-amber-600 hover:text-amber-700 hover:bg-amber-50" data-testid={`archive-therapist-${therapist.user_id}`}>
-                <Archive className="w-4 h-4" />
-              </Button>
+          <div className="flex gap-1">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              onClick={() => handleEdit(therapist)}
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-amber-600 hover:text-amber-700 hover:bg-amber-50" data-testid={`archive-therapist-${therapist.user_id}`}>
+                  <Archive className="w-4 h-4" />
+                </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
