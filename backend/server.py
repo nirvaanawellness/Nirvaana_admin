@@ -222,6 +222,22 @@ async def delete_property(property_id: str, current_user: dict = Depends(get_cur
     
     return {"message": "Property archived successfully. Historical data preserved."}
 
+@api_router.put("/properties/{property_id}")
+async def update_property(property_id: str, property_data: PropertyCreate, current_user: dict = Depends(get_current_admin)):
+    """Update an existing property"""
+    from bson import ObjectId
+    
+    update_dict = property_data.model_dump()
+    result = await db.properties.update_one(
+        {"_id": ObjectId(property_id)},
+        {"$set": update_dict}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Property not found")
+    
+    return {"message": "Property updated successfully"}
+
 @api_router.put("/properties/{property_id}/restore")
 async def restore_property(property_id: str, current_user: dict = Depends(get_current_admin)):
     """Restore an archived property"""
