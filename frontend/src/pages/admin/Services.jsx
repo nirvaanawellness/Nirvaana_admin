@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Package, Filter, Calendar } from 'lucide-react';
+import { ArrowLeft, Package, Filter, Calendar, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import * as XLSX from 'xlsx';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -43,6 +44,38 @@ const AdminServices = ({ user, onLogout }) => {
   const handleFilter = () => {
     setLoading(true);
     fetchServices();
+  };
+
+  const exportToExcel = () => {
+    if (services.length === 0) {
+      toast.error('No services to export');
+      return;
+    }
+    
+    const exportData = services.map(s => ({
+      'Date': s.date,
+      'Time': s.time,
+      'Customer Name': s.customer_name,
+      'Customer Phone': s.customer_phone,
+      'Customer Email': s.customer_email || 'N/A',
+      'Therapy Type': s.therapy_type,
+      'Duration': s.therapy_duration,
+      'Base Price (₹)': s.base_price,
+      'GST (₹)': s.gst_amount,
+      'Total (₹)': s.total_amount,
+      'Payment Mode': s.payment_mode || 'N/A',
+      'Payment Received By': s.payment_received_by,
+      'Property': s.property_id,
+      'Therapist': s.therapist_name || s.therapist_id
+    }));
+    
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Services');
+    
+    const dateStr = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `nirvaana_services_${dateStr}.xlsx`);
+    toast.success('Services exported successfully!');
   };
 
   const totalRevenue = services.reduce((sum, s) => sum + s.total_amount, 0);
