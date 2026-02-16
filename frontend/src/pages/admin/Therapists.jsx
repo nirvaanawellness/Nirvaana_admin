@@ -236,6 +236,7 @@ const AdminTherapists = ({ user, onLogout }) => {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          </div>
         )}
       </div>
 
