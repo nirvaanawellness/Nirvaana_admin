@@ -14,23 +14,52 @@ Build a secure, scalable, mobile-first internal operations management applicatio
 - Service Entry System with GST (18%) calculation
 - Revenue Split Engine based on property agreements
 - Target & Incentive System
-- Analytics Dashboard with date-based filtering
+- Analytics Dashboard with date-based filtering and revenue forecast
 - Expense Tracking System
 - Monthly Closing System
+- Automated Email Feedback (Resend Integration)
 - WhatsApp/SMS Feedback (Mocked)
 
 ## Tech Stack
 - **Frontend**: React, Tailwind CSS, shadcn/ui, Recharts
-- **Backend**: FastAPI, Pydantic
+- **Backend**: FastAPI, Pydantic, NumPy
 - **Database**: MongoDB
 - **Authentication**: JWT, OTP (for password change)
-- **Integrations**: Resend (Email), WhatsApp/SMS (Mocked)
+- **Integrations**: Resend (Email - ACTIVE), WhatsApp/SMS (Mocked)
 
 ## What's Been Implemented
 
+### Feb 16, 2026 - Session 3: Email Integration & Analytics Dashboard (P0/P1 Complete)
+
+#### Resend Email Integration (NEW - ACTIVE)
+- **Email Service**: Fully configured with Resend API
+- **Sender**: `Nirvaana Wellness <noreply@nirvaanawellness.com>`
+- **Three Email Flows Working**:
+  1. **Admin OTP Email**: Password reset OTP sent to admin email
+  2. **Therapist Welcome Email**: Auto-generated credentials sent on onboarding
+  3. **Customer Feedback Email**: Sent after service entry with customer email
+- **Feedback Link**: Redirects to `https://www.nirvaanawellness.com/feedback`
+- **Configuration**: `EMAIL_ENABLED=true`, `EMAIL_PROVIDER=resend` in backend/.env
+
+#### Analytics Dashboard (NEW)
+- **Analytics Page** (`/admin/analytics`):
+  - Revenue forecast for next month
+  - Confidence level indicator (high/medium/low)
+  - Trend analysis (growing/declining/stable)
+  - Historical data table (6 months)
+  - Interactive area chart with forecast visualization
+  - Methodology explanation section
+- **API Endpoint**: `GET /api/analytics/forecast`
+- **Algorithm**: Weighted Moving Average + Linear Regression
+- **Handles insufficient data gracefully**
+
+#### Bug Fixes
+- **Fixed**: Therapist onboarding error (response not captured from axios call)
+- **Fixed**: Feedback email link now points to actual feedback page
+
 ### Feb 15, 2026 - Session 2: Attendance Tracking, Archiving, OTP Security (P0 Complete)
 
-#### Admin Attendance Tracking (NEW)
+#### Admin Attendance Tracking
 - **Admin Attendance Page** (`/admin/attendance`):
   - Daily attendance log showing all therapists
   - Summary cards: Total Therapists, Signed In, Not Signed In, Completion Rate
@@ -46,7 +75,7 @@ Build a secure, scalable, mobile-first internal operations management applicatio
   - `GET /api/attendance/admin/daily` - Daily attendance with checked_in and not_checked_in lists
   - `GET /api/attendance/admin/history/{therapist_id}` - Therapist attendance history
 
-#### Archiving System (Soft Delete) (NEW)
+#### Archiving System (Soft Delete)
 - Properties and Therapists can now be "archived" instead of deleted
 - Archived items preserve historical data for reports and settlements
 - **Properties Page**: Shows "X Active • Y Archived" sections
