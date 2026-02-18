@@ -121,14 +121,21 @@ const AdminExpenses = ({ user, onLogout }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.property_id || !formData.expense_type || !formData.amount) {
+    // Property is optional now - empty means shared expense
+    if (!formData.expense_type || !formData.amount) {
       toast.error('Please fill all required fields');
       return;
     }
     
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`${API}/expenses`, formData, {
+      // Send null/empty property_id for shared expenses
+      const payload = {
+        ...formData,
+        property_id: formData.property_id === 'SHARED' ? null : formData.property_id || null
+      };
+      
+      await axios.post(`${API}/expenses`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
