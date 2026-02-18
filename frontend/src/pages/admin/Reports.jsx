@@ -668,7 +668,7 @@ const AdminReports = ({ user, onLogout }) => {
   // Download Sales Report with full GST breakdown
   const downloadSalesReport = () => {
     const headers = [
-      'Property', 'Share %', 
+      'Property', 'Ownership Type', 'Share %', 
       'Base Revenue', 'GST Collected', 'Gross Revenue',
       'Hotel Base Expected', 'Hotel GST Liability', 'Hotel Total Expected', 'Hotel Received',
       'Our Base Expected', 'Our GST Liability', 'Our Total Expected', 'Our Received',
@@ -676,26 +676,28 @@ const AdminReports = ({ user, onLogout }) => {
     ];
     
     const rows = salesReportData.map(p => {
+      const isOwned = p.isOurProperty;
       // Settlement: Positive means they need to receive (other owes them)
-      const toPayHotel = p.hotel_settlement > 0 ? p.hotel_settlement : 0;
-      const toPayNirvaana = p.our_settlement > 0 ? p.our_settlement : 0;
+      const toPayHotel = !isOwned && p.hotel_settlement > 0 ? p.hotel_settlement : 0;
+      const toPayNirvaana = !isOwned && p.our_settlement > 0 ? p.our_settlement : 0;
       
       return [
         p.property_name, 
-        p.hotel_share_percent, 
+        isOwned ? 'Owned (100%)' : 'Split Model',
+        isOwned ? '100%' : `${p.hotel_share_percent}%`, 
         p.base_revenue.toFixed(2),
         p.gst_collected.toFixed(2),
         p.gross_revenue.toFixed(2),
-        p.hotel_base_expected.toFixed(2),
-        p.hotel_gst_liability.toFixed(2),
-        p.hotel_total_expected.toFixed(2),
+        isOwned ? 'N/A' : (p.hotel_base_expected || 0).toFixed(2),
+        isOwned ? 'N/A' : (p.hotel_gst_liability || 0).toFixed(2),
+        isOwned ? 'N/A' : (p.hotel_total_expected || 0).toFixed(2),
         p.hotel_received.toFixed(2),
         p.our_base_expected.toFixed(2),
         p.our_gst_liability.toFixed(2),
         p.our_total_expected.toFixed(2),
         p.our_received.toFixed(2),
-        toPayHotel > 0 ? toPayHotel.toFixed(2) : 'NA',
-        toPayNirvaana > 0 ? toPayNirvaana.toFixed(2) : 'NA'
+        isOwned ? 'N/A' : (toPayHotel > 0 ? toPayHotel.toFixed(2) : 'NA'),
+        isOwned ? 'N/A' : (toPayNirvaana > 0 ? toPayNirvaana.toFixed(2) : 'NA')
       ];
     });
     
