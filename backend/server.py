@@ -408,13 +408,23 @@ async def delete_therapist(therapist_id: str, current_user: dict = Depends(get_c
 
 @api_router.put("/therapists/{therapist_id}")
 async def update_therapist(therapist_id: str, therapist_data: dict, current_user: dict = Depends(get_current_admin)):
-    """Update an existing therapist"""
+    """Update an existing therapist. Sends email if property is reassigned."""
     # Remove fields that shouldn't be updated
     update_fields = {k: v for k, v in therapist_data.items() if k not in ['password', 'email', 'user_id', 'role', 'status']}
     
     if not update_fields:
         raise HTTPException(status_code=400, detail="No valid fields to update")
     
+    # Get current therapist data to check if property changed
+    current_therapist = await db.therapists.find_one({"user_id": therapist_id})
+    if not current_therapist:
+        raise HTTPException(status_code=404, detail="Therapist not found")
+    
+    old_property = current_therapist.get("assigned_property_id")
+    new_property = update_fields.get("assigned_property_id")
+    property_changed = new_property and new_property != old_property
+    
+    # Update therapist
     result = await db.therapists.update_one(
         {"user_id": therapist_id},
         {"$set": update_fields}
@@ -423,7 +433,57 @@ async def update_therapist(therapist_id: str, therapist_data: dict, current_user
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Therapist not found")
     
-    return {"message": "Therapist updated successfully"}
+    # Also update the user record if property changed
+    if property_changed:
+        from bson import ObjectId
+        await db.users.update_one(
+            {"_id": ObjectId(therapist_id)},
+            {"$set": {"assigned_property_id": new_property}}
+        )
+    
+    response = {"message": "Therapist updated successfully"}
+    
+    # Send property reassignment email if property changed
+    if property_changed:
+        use_email = os.getenv("EMAIL_ENABLED", "false").lower() == "true"
+        therapist_email = current_therapist.get("email")
+        therapist_name = current_therapist.get("full_name", "")
+        
+        # Get the therapist's username from user record
+        from bson import ObjectId
+        user_record = await db.users.find_one({"_id": ObjectId(therapist_id)})
+        username = user_record.get("username") if user_record else ""
+        
+        if use_email and therapist_email:
+            try:
+                # Get new property details
+                new_property_doc = await db.properties.find_one({"hotel_name": new_property})
+                property_location = new_property_doc.get("location", "") if new_property_doc else ""
+                
+                email_result = await email_service.send_property_reassignment_email(
+                    therapist_email=therapist_email,
+                    therapist_name=therapist_name,
+                    username=username,
+                    new_property=new_property,
+                    property_location=property_location,
+                    old_property=old_property
+                )
+                
+                if email_result.get("success"):
+                    response["email_sent"] = True
+                    response["email_note"] = f"Property reassignment email sent to {therapist_email}"
+                else:
+                    response["email_sent"] = False
+                    response["email_note"] = f"Email failed: {email_result.get('message')}"
+            except Exception as e:
+                logger.error(f"Failed to send reassignment email: {str(e)}")
+                response["email_sent"] = False
+                response["email_note"] = f"Email error: {str(e)}"
+        else:
+            response["property_reassigned"] = True
+            response["note"] = f"Property changed from {old_property} to {new_property}. Email not sent (email disabled or no email address)."
+    
+    return response
 
 @api_router.put("/therapists/{therapist_id}/restore")
 async def restore_therapist(therapist_id: str, current_user: dict = Depends(get_current_admin)):
