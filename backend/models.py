@@ -47,15 +47,20 @@ class UserLogin(BaseModel):
     email: str
     password: str
 
+class OwnershipType(str, Enum):
+    OUR_PROPERTY = "our_property"
+    OUTSIDE_PROPERTY = "outside_property"
+
 class Property(BaseModel):
     hotel_name: str
     location: str
     gst_number: str
-    revenue_share_percentage: float
-    contract_start_date: str
-    payment_cycle: PaymentCycle
-    contact_person: str
-    contact_number: str
+    ownership_type: OwnershipType = OwnershipType.OUTSIDE_PROPERTY
+    revenue_share_percentage: Optional[float] = None  # Only required for outside_property
+    contract_start_date: Optional[str] = None
+    payment_cycle: PaymentCycle = PaymentCycle.MONTHLY
+    contact_person: Optional[str] = None
+    contact_number: Optional[str] = None
     active: bool = True
     status: EntityStatus = EntityStatus.ACTIVE
     archived_at: Optional[datetime] = None
@@ -64,12 +69,13 @@ class Property(BaseModel):
 class PropertyCreate(BaseModel):
     hotel_name: str
     location: str
-    gst_number: str
-    revenue_share_percentage: float
-    contract_start_date: str
-    payment_cycle: PaymentCycle
-    contact_person: str
-    contact_number: str
+    gst_number: Optional[str] = None
+    ownership_type: OwnershipType = OwnershipType.OUTSIDE_PROPERTY
+    revenue_share_percentage: Optional[float] = None  # Only required for outside_property
+    contract_start_date: Optional[str] = None
+    payment_cycle: Optional[PaymentCycle] = PaymentCycle.MONTHLY
+    contact_person: Optional[str] = None
+    contact_number: Optional[str] = None
 
 class Therapist(BaseModel):
     user_id: str
