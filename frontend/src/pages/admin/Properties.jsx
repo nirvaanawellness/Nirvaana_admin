@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Building2, Plus, MapPin, Phone, Calendar, Percent, RotateCcw, Archive, CheckCircle, Pencil } from 'lucide-react';
+import { Building2, Plus, MapPin, Phone, Calendar, Percent, RotateCcw, Archive, CheckCircle, Pencil, Home, Handshake } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import AppHeader from '@/components/shared/AppHeader';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -23,6 +24,7 @@ const AdminProperties = ({ user, onLogout }) => {
     hotel_name: '',
     location: '',
     gst_number: '',
+    ownership_type: 'outside_property',
     revenue_share_percentage: '',
     contract_start_date: '',
     payment_cycle: 'monthly',
@@ -66,6 +68,7 @@ const AdminProperties = ({ user, onLogout }) => {
       hotel_name: '',
       location: '',
       gst_number: '',
+      ownership_type: 'outside_property',
       revenue_share_percentage: '',
       contract_start_date: '',
       payment_cycle: 'monthly',
@@ -81,6 +84,7 @@ const AdminProperties = ({ user, onLogout }) => {
       hotel_name: property.hotel_name || '',
       location: property.location || '',
       gst_number: property.gst_number || '',
+      ownership_type: property.ownership_type || 'outside_property',
       revenue_share_percentage: property.revenue_share_percentage?.toString() || '',
       contract_start_date: property.contract_start_date || '',
       payment_cycle: property.payment_cycle || 'monthly',
@@ -96,7 +100,9 @@ const AdminProperties = ({ user, onLogout }) => {
       const token = localStorage.getItem('token');
       const payload = {
         ...formData,
-        revenue_share_percentage: parseFloat(formData.revenue_share_percentage)
+        revenue_share_percentage: formData.ownership_type === 'our_property' 
+          ? null 
+          : parseFloat(formData.revenue_share_percentage) || 0
       };
       
       if (editingProperty) {
@@ -105,7 +111,7 @@ const AdminProperties = ({ user, onLogout }) => {
         });
         toast.success('Property updated successfully');
       } else {
-        const response = await axios.post(`${API}/properties`, payload, {
+        await axios.post(`${API}/properties`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success('Property added successfully');
@@ -151,8 +157,26 @@ const AdminProperties = ({ user, onLogout }) => {
     }
   };
 
+  const getOwnershipBadge = (property) => {
+    if (property.ownership_type === 'our_property') {
+      return (
+        <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 flex items-center gap-1">
+          <Home className="w-3 h-3" />
+          Owned
+        </span>
+      );
+    }
+    return (
+      <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-700 flex items-center gap-1">
+        <Handshake className="w-3 h-3" />
+        Split Model
+      </span>
+    );
+  };
+
   const PropertyCard = ({ property, isArchived = false }) => {
     const assignedTherapists = getAssignedTherapists(property.hotel_name);
+    const isOurProperty = property.ownership_type === 'our_property';
     
     return (
       <div 
@@ -161,8 +185,8 @@ const AdminProperties = ({ user, onLogout }) => {
       >
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isArchived ? 'bg-muted' : 'bg-primary/10'}`}>
-              <Building2 className={`w-5 h-5 ${isArchived ? 'text-muted-foreground' : 'text-primary'}`} strokeWidth={1.5} />
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isArchived ? 'bg-muted' : isOurProperty ? 'bg-green-100' : 'bg-primary/10'}`}>
+              <Building2 className={`w-5 h-5 ${isArchived ? 'text-muted-foreground' : isOurProperty ? 'text-green-600' : 'text-primary'}`} strokeWidth={1.5} />
             </div>
             <div>
               <h3 className="font-medium text-foreground">{property.hotel_name}</h3>
@@ -229,14 +253,27 @@ const AdminProperties = ({ user, onLogout }) => {
           )}
         </div>
 
+        {/* Ownership Badge */}
+        <div className="mb-3">
+          {getOwnershipBadge(property)}
+        </div>
+
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Percent className="w-4 h-4" />
-            <span>Hotel Share: {property.revenue_share_percentage}%</span>
-          </div>
+          {!isOurProperty && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Percent className="w-4 h-4" />
+              <span>Hotel Share: {property.revenue_share_percentage || 0}%</span>
+            </div>
+          )}
+          {isOurProperty && (
+            <div className="flex items-center gap-2 text-green-600">
+              <CheckCircle className="w-4 h-4" />
+              <span>100% Nirvaana</span>
+            </div>
+          )}
           <div className="flex items-center gap-2 text-muted-foreground">
             <Calendar className="w-4 h-4" />
-            <span>{property.payment_cycle}</span>
+            <span>{property.payment_cycle || 'monthly'}</span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground col-span-2">
             <Phone className="w-4 h-4" />
@@ -258,6 +295,8 @@ const AdminProperties = ({ user, onLogout }) => {
       </div>
     );
   };
+
+  const isOurProperty = formData.ownership_type === 'our_property';
 
   return (
     <div className="min-h-screen bg-background">
@@ -286,6 +325,33 @@ const AdminProperties = ({ user, onLogout }) => {
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Ownership Type - Radio Buttons */}
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <Label className="text-base font-medium mb-3 block">Ownership Type *</Label>
+                  <RadioGroup
+                    value={formData.ownership_type}
+                    onValueChange={(value) => setFormData({ ...formData, ownership_type: value })}
+                    className="flex gap-6"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="our_property" id="our_property" />
+                      <Label htmlFor="our_property" className="flex items-center gap-2 cursor-pointer">
+                        <Home className="w-4 h-4 text-green-600" />
+                        <span>Our Property</span>
+                        <span className="text-xs text-muted-foreground">(100% owned)</span>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="outside_property" id="outside_property" />
+                      <Label htmlFor="outside_property" className="flex items-center gap-2 cursor-pointer">
+                        <Handshake className="w-4 h-4 text-amber-600" />
+                        <span>Outside Property</span>
+                        <span className="text-xs text-muted-foreground">(Revenue split)</span>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
                 <div>
                   <Label htmlFor="hotel_name">Hotel Name *</Label>
                   <Input
@@ -313,8 +379,12 @@ const AdminProperties = ({ user, onLogout }) => {
                     placeholder="Optional"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="revenue_share_percentage">Hotel's Revenue Share % *</Label>
+                
+                {/* Revenue Share - Only for Outside Property */}
+                <div className={isOurProperty ? 'opacity-50' : ''}>
+                  <Label htmlFor="revenue_share_percentage">
+                    Hotel's Revenue Share % {!isOurProperty && '*'}
+                  </Label>
                   <Input
                     id="revenue_share_percentage"
                     type="number"
@@ -323,17 +393,26 @@ const AdminProperties = ({ user, onLogout }) => {
                     max="100"
                     value={formData.revenue_share_percentage}
                     onChange={(e) => setFormData({ ...formData, revenue_share_percentage: e.target.value })}
-                    required
+                    required={!isOurProperty}
+                    disabled={isOurProperty}
+                    placeholder={isOurProperty ? 'Not applicable for owned properties' : 'Enter percentage'}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Percentage of BASE revenue (excl. GST) that goes to hotel</p>
+                  {!isOurProperty && (
+                    <p className="text-xs text-muted-foreground mt-1">Percentage of BASE revenue (excl. GST) that goes to hotel</p>
+                  )}
+                  {isOurProperty && (
+                    <p className="text-xs text-green-600 mt-1">100% revenue belongs to Nirvaana</p>
+                  )}
                 </div>
-                <div>
+
+                <div className={isOurProperty ? 'opacity-50' : ''}>
                   <Label htmlFor="contract_start_date">Contract Start Date</Label>
                   <Input
                     id="contract_start_date"
                     type="date"
                     value={formData.contract_start_date}
                     onChange={(e) => setFormData({ ...formData, contract_start_date: e.target.value })}
+                    disabled={isOurProperty}
                   />
                 </div>
                 <div>
