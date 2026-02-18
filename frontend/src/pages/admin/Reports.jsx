@@ -955,24 +955,71 @@ const AdminReports = ({ user, onLogout }) => {
           </div>
         )}
 
-        {/* Property Bar Chart with GST-aware data */}
+        {/* Property Bar Chart with GST-aware data - Improved Grouped Bar Chart */}
         {chartData.length > 0 && (
           <div className="glass rounded-2xl p-6">
-            <h3 className="text-lg font-serif text-foreground mb-4">Our Base Share vs Expenses by Property</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-serif text-foreground">Our Base Share vs Expenses by Property</h3>
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded bg-[#B89D62]"></div> Base Share
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded bg-[#ef4444]"></div> Expenses
+                </span>
+              </div>
+            </div>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${v}`} />
+              <BarChart data={chartData} barCategoryGap="20%" barGap={4}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                <XAxis 
+                  dataKey="name" 
+                  tick={{ fontSize: 11, fill: '#6b7280' }} 
+                  axisLine={{ stroke: '#e5e7eb' }}
+                  tickLine={false}
+                />
+                <YAxis 
+                  tick={{ fontSize: 11, fill: '#6b7280' }} 
+                  tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`}
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <Tooltip 
                   formatter={(value, name) => [`₹${value.toLocaleString()}`, name]}
-                  labelFormatter={(label) => `Property: ${label}`}
+                  labelFormatter={(label) => {
+                    const item = chartData.find(d => d.name === label);
+                    return item?.isOurProperty ? `${label} (Owned)` : label;
+                  }}
+                  contentStyle={{ 
+                    backgroundColor: '#fff', 
+                    border: '1px solid #e5e7eb', 
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }}
+                  cursor={{ fill: 'rgba(0,0,0,0.05)' }}
                 />
-                <Legend />
-                <Bar dataKey="ourBaseShare" name="Our Base Share" fill="#B89D62" />
-                <Bar dataKey="expenses" name="Expenses" fill="#ef4444" />
+                <Bar 
+                  dataKey="ourBaseShare" 
+                  name="Our Base Share" 
+                  fill="#B89D62" 
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={50}
+                />
+                <Bar 
+                  dataKey="expenses" 
+                  name="Expenses" 
+                  fill="#ef4444" 
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={50}
+                />
               </BarChart>
             </ResponsiveContainer>
+            {/* Show distributed expense note if applicable */}
+            {chartData.some(d => d.distributedExpenses > 0) && (
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                * "Other" expenses (₹{chartData[0]?.distributedExpenses?.toFixed(0) || 0}) distributed equally across all active properties
+              </p>
+            )}
           </div>
         )}
 
