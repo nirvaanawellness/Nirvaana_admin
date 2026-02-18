@@ -54,6 +54,7 @@ const ExpenseMarker = (props) => {
  * - Revenue share % is applied ONLY on Base Amount (excluding GST)
  * - GST is settled proportionately based on who collected it
  * - Profit = Our Base Share - Expenses (GST excluded from profit)
+ * - For "Our Property" (owned): 100% revenue to Nirvaana, no split
  * 
  * Settlement Logic:
  * 1. Calculate each party's expected BASE share from total base revenue
@@ -61,7 +62,7 @@ const ExpenseMarker = (props) => {
  * 3. Compare expected (base + GST) with actual collected (gross)
  * 4. Settlement = Expected Total - Actually Collected
  */
-const calculateGSTAwareSettlement = (services, hotelSharePercent) => {
+const calculateGSTAwareSettlement = (services, hotelSharePercent, isOurProperty = false) => {
   // Step 1: Aggregate totals
   const totals = services.reduce((acc, s) => {
     acc.baseRevenue += s.base_price;
@@ -82,6 +83,31 @@ const calculateGSTAwareSettlement = (services, hotelSharePercent) => {
     hotelCollectedGross: 0, 
     nirvaanaCollectedGross: 0 
   });
+  
+  // For "Our Property" - 100% goes to Nirvaana
+  if (isOurProperty) {
+    return {
+      baseRevenue: totals.baseRevenue,
+      gstCollected: totals.gstCollected,
+      grossRevenue: totals.grossRevenue,
+      
+      // Hotel gets nothing
+      hotelBaseShare: 0,
+      hotelGSTLiability: 0,
+      hotelExpectedTotal: 0,
+      hotelCollectedGross: totals.hotelCollectedGross,
+      hotelSettlement: null, // N/A
+      
+      // Nirvaana gets everything
+      nirvaanaBaseShare: totals.baseRevenue,
+      nirvaanaGSTLiability: totals.gstCollected,
+      nirvaanaExpectedTotal: totals.grossRevenue,
+      nirvaanaCollectedGross: totals.nirvaanaCollectedGross,
+      nirvaanaSettlement: null, // N/A
+      
+      isOurProperty: true
+    };
+  }
   
   // Step 2: Calculate expected BASE shares (share % applied to BASE only)
   const hotelBaseShare = totals.baseRevenue * (hotelSharePercent / 100);
