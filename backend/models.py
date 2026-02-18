@@ -203,7 +203,7 @@ class ExpenseCategory(str, Enum):
     ADHOC = "adhoc"
 
 class Expense(BaseModel):
-    property_id: str
+    property_id: Optional[str] = None  # None = shared expense distributed across all properties
     expense_type: ExpenseType
     category: ExpenseCategory
     amount: float
@@ -214,7 +214,7 @@ class Expense(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class ExpenseCreate(BaseModel):
-    property_id: str
+    property_id: Optional[str] = None  # None = shared expense distributed across all properties
     expense_type: ExpenseType
     category: ExpenseCategory
     amount: float
