@@ -363,7 +363,8 @@ const AdminReports = ({ user, onLogout }) => {
     // Calculate our BASE share per date (share % on base_price only, NOT gross)
     services.forEach(service => {
       const date = service.date;
-      const hotelSharePercent = getPropertyShare(service.property_id);
+      const isOwned = isPropertyOwned(service.property_id);
+      const hotelSharePercent = isOwned ? 0 : getPropertyShare(service.property_id);
       // Our Base Share = Base Price × (100% - Hotel Share %)
       const ourBaseShare = service.base_price * (1 - hotelSharePercent / 100);
       
@@ -380,7 +381,7 @@ const AdminReports = ({ user, onLogout }) => {
     });
     
     return Object.values(dataByDate).sort((a, b) => a.date.localeCompare(b.date));
-  }, [services, expenses, selectedYear, selectedMonth, selectedQuarter, selectedProperties]);
+  }, [services, expenses, selectedYear, selectedMonth, selectedQuarter, selectedProperties, properties]);
 
   // Property chart data with GST-aware calculations
   const chartData = useMemo(() => {
