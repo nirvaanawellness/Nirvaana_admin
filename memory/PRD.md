@@ -148,7 +148,29 @@ Build a secure, scalable, mobile-first internal operations management applicatio
 - [x] "Other" expense distribution across properties ✅
 - [x] Shared expenses (no property_id) distributed equally ✅
 
-### Feb 18, 2026 - Shared Expense Distribution Feature (P1 Complete)
+### Feb 18, 2026 - Service Entries & Therapist Reassignment Features
+
+#### Service Entries Page Improvements
+- **Property Filter**: Added dropdown to filter services by property
+- **Reset Button**: Added reset icon to clear all filters
+- **New Columns**: Added Therapist Name, Property Name, City columns
+- **Time Fix**: Service time now captured in IST (Indian Standard Time) instead of UTC
+- **Excel Export**: Updated to include all new columns
+
+#### Therapist Property Reassignment
+- **Email Notification**: When therapist is reassigned to a new property, system sends email with:
+  - Same login credentials (unchanged)
+  - Old property → New property visual transition
+  - Clear instructions about what changes
+- **Data Preservation**: Historical services and attendance remain linked to old property
+- **Going Forward**: New services and attendance tracked under new property mapping
+
+#### Owned Property Payment Logic
+- **Auto-selection**: If therapist is assigned to an "Owned" property:
+  - "Payment Received By" automatically defaults to "Nirvaana"
+  - No option to change (selection is disabled/hidden)
+  - Visual banner shows "Owned Property - Payment to Nirvaana"
+- **Backend Validation**: Even if frontend is bypassed, backend enforces nirvaana payment for owned properties
 
 #### Shared Expense Logic
 - Expenses without a property_id are treated as "Shared" expenses
