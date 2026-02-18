@@ -293,6 +293,7 @@ const AdminReports = ({ user, onLogout }) => {
    * - Revenue share % applied ONLY on Base Amount (excluding GST)
    * - GST is tracked separately and NOT included in profit calculation
    * - Profit = Our Base Share - Expenses
+   * - "Other" expenses are distributed equally across all active properties
    */
   const summary = useMemo(() => {
     // Group services by property for accurate per-property calculations
@@ -316,7 +317,8 @@ const AdminReports = ({ user, onLogout }) => {
     
     Object.entries(propertyGroups).forEach(([propId, propServices]) => {
       const hotelSharePercent = getPropertyShare(propId);
-      const settlement = calculateGSTAwareSettlement(propServices, hotelSharePercent);
+      const isOwned = isPropertyOwned(propId);
+      const settlement = calculateGSTAwareSettlement(propServices, hotelSharePercent, isOwned);
       
       totalBaseRevenue += settlement.baseRevenue;
       totalGstCollected += settlement.gstCollected;
@@ -325,7 +327,7 @@ const AdminReports = ({ user, onLogout }) => {
       totalNirvaanaBaseShare += settlement.nirvaanaBaseShare;
     });
     
-    // Sum expenses
+    // Sum expenses (including distributed "Other" expenses)
     expenses.forEach(exp => {
       totalExpenses += exp.amount;
     });
