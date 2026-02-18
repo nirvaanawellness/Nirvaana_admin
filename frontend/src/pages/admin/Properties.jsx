@@ -541,6 +541,44 @@ const AdminProperties = ({ user, onLogout }) => {
           </>
         )}
       </div>
+
+      {/* Ownership Change Confirmation Dialog */}
+      <AlertDialog open={ownershipChangeDialog} onOpenChange={setOwnershipChangeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Info className="w-5 h-5 text-amber-500" />
+              Change Ownership Type?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                You are changing the ownership type from{' '}
+                <strong>
+                  {editingProperty?.ownership_type === 'our_property' ? 'Owned (100%)' : 'Split Model'}
+                </strong>{' '}
+                to{' '}
+                <strong>
+                  {pendingOwnershipChange === 'our_property' ? 'Owned (100%)' : 'Split Model'}
+                </strong>.
+              </p>
+              <p className="text-amber-600 font-medium">
+                This will affect how all historical and future reports calculate revenue sharing 
+                and settlements for this property.
+              </p>
+              <p>
+                • Reports are calculated dynamically based on current ownership type<br/>
+                • No historical data will be lost - it will be recalculated automatically
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelOwnershipChange}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmOwnershipChange} className="bg-amber-600 hover:bg-amber-700">
+              Confirm Change
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
