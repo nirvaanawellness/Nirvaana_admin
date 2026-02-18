@@ -384,6 +384,7 @@ const AdminReports = ({ user, onLogout }) => {
   }, [services, expenses, selectedYear, selectedMonth, selectedQuarter, selectedProperties, properties]);
 
   // Property chart data with GST-aware calculations
+  // Also calculates distributed "Other" expenses
   const chartData = useMemo(() => {
     const byProperty = {};
     
@@ -396,14 +397,29 @@ const AdminReports = ({ user, onLogout }) => {
       byProperty[propId].push(s);
     });
     
+    // Calculate total "Other" expenses for distribution
+    const otherExpensesTotal = expenses
+      .filter(e => e.expense_type === 'other')
+      .reduce((sum, e) => sum + e.amount, 0);
+    
+    // Calculate distributed "Other" expense per active property
+    const distributedOtherExpense = activePropertiesCount > 0 
+      ? otherExpensesTotal / activePropertiesCount 
+      : 0;
+    
     // Calculate GST-aware data per property
     const chartItems = Object.entries(byProperty).map(([propId, propServices]) => {
-      const hotelSharePercent = getPropertyShare(propId);
-      const settlement = calculateGSTAwareSettlement(propServices, hotelSharePercent);
+      const isOwned = isPropertyOwned(propId);
+      const hotelSharePercent = isOwned ? 0 : getPropertyShare(propId);
+      const settlement = calculateGSTAwareSettlement(propServices, hotelSharePercent, isOwned);
       
-      // Get expenses for this property
-      const propExpenses = expenses.filter(e => e.property_id === propId)
+      // Get expenses for this property (excluding "Other" which is distributed)
+      const propExpenses = expenses
+        .filter(e => e.property_id === propId && e.expense_type !== 'other')
         .reduce((sum, e) => sum + e.amount, 0);
+      
+      // Total expenses for this property = direct expenses + distributed "Other" expenses
+      const totalPropertyExpenses = propExpenses + distributedOtherExpense;
       
       return {
         name: propId,
@@ -412,13 +428,16 @@ const AdminReports = ({ user, onLogout }) => {
         grossRevenue: settlement.grossRevenue,
         ourBaseShare: settlement.nirvaanaBaseShare,
         hotelBaseShare: settlement.hotelBaseShare,
-        expenses: propExpenses,
-        hotelSharePercent
+        expenses: totalPropertyExpenses,
+        directExpenses: propExpenses,
+        distributedExpenses: distributedOtherExpense,
+        hotelSharePercent,
+        isOurProperty: isOwned
       };
     });
     
     return chartItems;
-  }, [services, expenses, properties]);
+  }, [services, expenses, properties, activePropertiesCount]);
 
   /**
    * GENERATE SALES REPORT WITH FULL GST-AWARE BREAKDOWN
