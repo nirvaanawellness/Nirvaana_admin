@@ -1132,9 +1132,9 @@ const AdminReports = ({ user, onLogout }) => {
                       <td className="py-2 px-1.5 text-right bg-gray-100">₹{salesReportData.reduce((sum, p) => sum + p.base_revenue, 0).toFixed(0)}</td>
                       <td className="py-2 px-1.5 text-right bg-gray-100 text-blue-600">₹{salesReportData.reduce((sum, p) => sum + p.gst_collected, 0).toFixed(0)}</td>
                       <td className="py-2 px-1.5 text-right bg-gray-100 font-bold">₹{salesReportData.reduce((sum, p) => sum + p.gross_revenue, 0).toFixed(0)}</td>
-                      <td className="py-2 px-1.5 text-right bg-amber-100/50">₹{salesReportData.reduce((sum, p) => sum + p.hotel_base_expected, 0).toFixed(0)}</td>
-                      <td className="py-2 px-1.5 text-right bg-amber-100/50 text-blue-600">₹{salesReportData.reduce((sum, p) => sum + p.hotel_gst_liability, 0).toFixed(0)}</td>
-                      <td className="py-2 px-1.5 text-right bg-amber-100/50 font-bold">₹{salesReportData.reduce((sum, p) => sum + p.hotel_total_expected, 0).toFixed(0)}</td>
+                      <td className="py-2 px-1.5 text-right bg-amber-100/50">₹{salesReportData.reduce((sum, p) => sum + (p.hotel_base_expected || 0), 0).toFixed(0)}</td>
+                      <td className="py-2 px-1.5 text-right bg-amber-100/50 text-blue-600">₹{salesReportData.reduce((sum, p) => sum + (p.hotel_gst_liability || 0), 0).toFixed(0)}</td>
+                      <td className="py-2 px-1.5 text-right bg-amber-100/50 font-bold">₹{salesReportData.reduce((sum, p) => sum + (p.hotel_total_expected || 0), 0).toFixed(0)}</td>
                       <td className="py-2 px-1.5 text-right bg-amber-100/50">₹{salesReportData.reduce((sum, p) => sum + p.hotel_received, 0).toFixed(0)}</td>
                       <td className="py-2 px-1.5 text-right bg-primary/10">₹{salesReportData.reduce((sum, p) => sum + p.our_base_expected, 0).toFixed(0)}</td>
                       <td className="py-2 px-1.5 text-right bg-primary/10 text-blue-600">₹{salesReportData.reduce((sum, p) => sum + p.our_gst_liability, 0).toFixed(0)}</td>
@@ -1155,9 +1155,10 @@ const AdminReports = ({ user, onLogout }) => {
                   <li><strong>Total Exp:</strong> Expected TOTAL = Base Expected + GST Liability</li>
                   <li><strong>Received:</strong> Actual GROSS amount collected by each party</li>
                   <li><strong>Settlement:</strong> Difference between Expected Total and Received</li>
+                  <li><strong className="text-green-600">Owned Properties:</strong> 100% revenue to Nirvaana - No hotel share or settlement applicable</li>
                 </ul>
                 <p className="pt-2 border-t border-border/50">
-                  <strong>→ Hotel:</strong> Nirvaana needs to pay Hotel • <strong>→ Us:</strong> Hotel needs to pay Nirvaana
+                  <strong>→ Hotel:</strong> Nirvaana needs to pay Hotel • <strong>→ Us:</strong> Hotel needs to pay Nirvaana • <strong className="text-green-600">N/A:</strong> Not applicable (owned property)
                 </p>
               </div>
               
