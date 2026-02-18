@@ -415,13 +415,23 @@ const AdminExpenses = ({ user, onLogout }) => {
                 <tbody>
                   {expenses.map((expense) => {
                     const property = properties.find(p => p.hotel_name === expense.property_id);
+                    const isSharedExpense = !expense.property_id;
                     const typeLabel = [...EXPENSE_TYPES.recurring, ...EXPENSE_TYPES.adhoc]
                       .find(t => t.value === expense.expense_type)?.label || expense.expense_type;
                     
                     return (
-                      <tr key={expense.id} className="border-b border-border/50 hover:bg-muted/30">
+                      <tr key={expense.id} className={`border-b border-border/50 hover:bg-muted/30 ${isSharedExpense ? 'bg-purple-50/30' : ''}`}>
                         <td className="py-3 px-2">{expense.date}</td>
-                        <td className="py-3 px-2">{property?.hotel_name || expense.property_id}</td>
+                        <td className="py-3 px-2">
+                          {isSharedExpense ? (
+                            <span className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-700 flex items-center gap-1 w-fit">
+                              <Share2 className="w-3 h-3" />
+                              Shared (All Properties)
+                            </span>
+                          ) : (
+                            property?.hotel_name || expense.property_id
+                          )}
+                        </td>
                         <td className="py-3 px-2">
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             expense.category === 'recurring' 
