@@ -78,6 +78,9 @@ const AdminProperties = ({ user, onLogout }) => {
     setEditingProperty(null);
   };
 
+  const [ownershipChangeDialog, setOwnershipChangeDialog] = useState(false);
+  const [pendingOwnershipChange, setPendingOwnershipChange] = useState(null);
+
   const handleEdit = (property) => {
     setEditingProperty(property);
     setFormData({
@@ -92,6 +95,27 @@ const AdminProperties = ({ user, onLogout }) => {
       contact_number: property.contact_number || ''
     });
     setDialogOpen(true);
+  };
+
+  const handleOwnershipChange = (newValue) => {
+    // If editing and ownership type is changing, show confirmation
+    if (editingProperty && editingProperty.ownership_type !== newValue) {
+      setPendingOwnershipChange(newValue);
+      setOwnershipChangeDialog(true);
+    } else {
+      setFormData({ ...formData, ownership_type: newValue });
+    }
+  };
+
+  const confirmOwnershipChange = () => {
+    setFormData({ ...formData, ownership_type: pendingOwnershipChange });
+    setOwnershipChangeDialog(false);
+    setPendingOwnershipChange(null);
+  };
+
+  const cancelOwnershipChange = () => {
+    setOwnershipChangeDialog(false);
+    setPendingOwnershipChange(null);
   };
 
   const handleSubmit = async (e) => {
