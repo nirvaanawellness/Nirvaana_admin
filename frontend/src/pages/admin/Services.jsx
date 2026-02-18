@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Package, Filter, Calendar, Download } from 'lucide-react';
+import { ArrowLeft, Package, Filter, Calendar, Download, RotateCcw, Building2, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import * as XLSX from 'xlsx';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -13,15 +14,39 @@ const API = `${BACKEND_URL}/api`;
 
 const AdminServices = ({ user, onLogout }) => {
   const [services, setServices] = useState([]);
+  const [properties, setProperties] = useState([]);
+  const [therapists, setTherapists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     date_from: '',
-    date_to: ''
+    date_to: '',
+    property_id: ''
   });
 
   useEffect(() => {
-    fetchServices();
+    fetchInitialData();
   }, []);
+
+  const fetchInitialData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      const [servicesRes, propertiesRes, therapistsRes] = await Promise.all([
+        axios.get(`${API}/services`, { headers }),
+        axios.get(`${API}/properties`, { headers }),
+        axios.get(`${API}/therapists`, { headers })
+      ]);
+      
+      setServices(servicesRes.data);
+      setProperties(propertiesRes.data);
+      setTherapists(therapistsRes.data);
+    } catch (error) {
+      toast.error('Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchServices = async () => {
     try {
@@ -29,6 +54,7 @@ const AdminServices = ({ user, onLogout }) => {
       const params = new URLSearchParams();
       if (filters.date_from) params.append('date_from', filters.date_from);
       if (filters.date_to) params.append('date_to', filters.date_to);
+      if (filters.property_id) params.append('property_id', filters.property_id);
       
       const response = await axios.get(`${API}/services?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -46,28 +72,71 @@ const AdminServices = ({ user, onLogout }) => {
     fetchServices();
   };
 
+  const handleReset = () => {
+    setFilters({
+      date_from: '',
+      date_to: '',
+      property_id: ''
+    });
+    setLoading(true);
+    // Fetch all services without filters
+    const fetchAll = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${API}/services`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setServices(response.data);
+      } catch (error) {
+        toast.error('Failed to load services');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
+  };
+
+  // Helper function to get property details
+  const getPropertyDetails = (propertyId) => {
+    const property = properties.find(p => p.hotel_name === propertyId);
+    return property || { hotel_name: propertyId, location: 'N/A' };
+  };
+
+  // Helper function to get therapist name
+  const getTherapistName = (therapistId, serviceName) => {
+    // First check if service has therapist_name
+    if (serviceName) return serviceName;
+    // Otherwise lookup from therapists list
+    const therapist = therapists.find(t => t.user_id === therapistId);
+    return therapist?.full_name || 'Unknown';
+  };
+
   const exportToExcel = () => {
     if (services.length === 0) {
       toast.error('No services to export');
       return;
     }
     
-    const exportData = services.map(s => ({
-      'Date': s.date,
-      'Time': s.time,
-      'Customer Name': s.customer_name,
-      'Customer Phone': s.customer_phone,
-      'Customer Email': s.customer_email || 'N/A',
-      'Therapy Type': s.therapy_type,
-      'Duration': s.therapy_duration,
-      'Base Price (₹)': s.base_price,
-      'GST (₹)': s.gst_amount,
-      'Total (₹)': s.total_amount,
-      'Payment Mode': s.payment_mode || 'N/A',
-      'Payment Received By': s.payment_received_by,
-      'Property': s.property_id,
-      'Therapist': s.therapist_name || s.therapist_id
-    }));
+    const exportData = services.map(s => {
+      const property = getPropertyDetails(s.property_id);
+      return {
+        'Date': s.date,
+        'Time': s.time,
+        'Therapist': getTherapistName(s.therapist_id, s.therapist_name),
+        'Property': property.hotel_name,
+        'City': property.location?.split(',')[0] || property.location || 'N/A',
+        'Customer Name': s.customer_name,
+        'Customer Phone': s.customer_phone,
+        'Customer Email': s.customer_email || 'N/A',
+        'Therapy Type': s.therapy_type,
+        'Duration': s.therapy_duration,
+        'Base Price (₹)': s.base_price,
+        'GST (₹)': s.gst_amount,
+        'Total (₹)': s.total_amount,
+        'Payment Mode': s.payment_mode || 'N/A',
+        'Payment Received By': s.payment_received_by
+      };
+    });
     
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
@@ -103,7 +172,7 @@ const AdminServices = ({ user, onLogout }) => {
             <Filter className="w-5 h-5 text-primary" strokeWidth={1.5} />
             <h3 className="text-lg font-serif text-foreground">Filters</h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="date_from">From Date</Label>
               <Input
@@ -124,9 +193,31 @@ const AdminServices = ({ user, onLogout }) => {
                 data-testid="date-to-input"
               />
             </div>
+            <div>
+              <Label htmlFor="property_filter">Property</Label>
+              <Select 
+                value={filters.property_id} 
+                onValueChange={(value) => setFilters({ ...filters, property_id: value === 'all' ? '' : value })}
+              >
+                <SelectTrigger id="property_filter" data-testid="property-filter-select">
+                  <SelectValue placeholder="All Properties" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Properties</SelectItem>
+                  {properties.filter(p => p.status !== 'archived').map((prop) => (
+                    <SelectItem key={prop.id} value={prop.hotel_name}>
+                      {prop.hotel_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex items-end gap-2">
               <Button onClick={handleFilter} className="flex-1" data-testid="apply-filter-button">
                 Apply Filters
+              </Button>
+              <Button onClick={handleReset} variant="outline" title="Reset Filters" data-testid="reset-filter-button">
+                <RotateCcw className="w-4 h-4" />
               </Button>
               <Button onClick={exportToExcel} variant="outline" data-testid="export-excel-button">
                 <Download className="w-4 h-4 mr-2" />
@@ -157,44 +248,68 @@ const AdminServices = ({ user, onLogout }) => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border/50">
-                  <th className="text-left py-3 px-4 text-sm text-muted-foreground font-medium">Date</th>
-                  <th className="text-left py-3 px-4 text-sm text-muted-foreground font-medium">Customer</th>
-                  <th className="text-left py-3 px-4 text-sm text-muted-foreground font-medium">Therapy</th>
-                  <th className="text-right py-3 px-4 text-sm text-muted-foreground font-medium">Base</th>
-                  <th className="text-right py-3 px-4 text-sm text-muted-foreground font-medium">GST</th>
-                  <th className="text-right py-3 px-4 text-sm text-muted-foreground font-medium">Total</th>
-                  <th className="text-left py-3 px-4 text-sm text-muted-foreground font-medium">Paid To</th>
+                  <th className="text-left py-3 px-3 text-sm text-muted-foreground font-medium">Date</th>
+                  <th className="text-left py-3 px-3 text-sm text-muted-foreground font-medium">Time</th>
+                  <th className="text-left py-3 px-3 text-sm text-muted-foreground font-medium">
+                    <div className="flex items-center gap-1">
+                      <User className="w-3.5 h-3.5" />
+                      Therapist
+                    </div>
+                  </th>
+                  <th className="text-left py-3 px-3 text-sm text-muted-foreground font-medium">
+                    <div className="flex items-center gap-1">
+                      <Building2 className="w-3.5 h-3.5" />
+                      Property
+                    </div>
+                  </th>
+                  <th className="text-left py-3 px-3 text-sm text-muted-foreground font-medium">City</th>
+                  <th className="text-left py-3 px-3 text-sm text-muted-foreground font-medium">Customer</th>
+                  <th className="text-left py-3 px-3 text-sm text-muted-foreground font-medium">Therapy</th>
+                  <th className="text-right py-3 px-3 text-sm text-muted-foreground font-medium">Base</th>
+                  <th className="text-right py-3 px-3 text-sm text-muted-foreground font-medium">GST</th>
+                  <th className="text-right py-3 px-3 text-sm text-muted-foreground font-medium">Total</th>
+                  <th className="text-left py-3 px-3 text-sm text-muted-foreground font-medium">Paid To</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="7" className="text-center py-8 text-muted-foreground">Loading...</td>
+                    <td colSpan="11" className="text-center py-8 text-muted-foreground">Loading...</td>
                   </tr>
                 ) : services.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="text-center py-8 text-muted-foreground">No services found</td>
+                    <td colSpan="11" className="text-center py-8 text-muted-foreground">No services found</td>
                   </tr>
                 ) : (
-                  services.map((service, index) => (
-                    <tr key={index} className="border-b border-border/30 hover:bg-muted/30">
-                      <td className="py-3 px-4 text-sm text-foreground">{service.date}</td>
-                      <td className="py-3 px-4 text-sm text-foreground">{service.customer_name}</td>
-                      <td className="py-3 px-4 text-sm text-foreground">{service.therapy_type}</td>
-                      <td className="py-3 px-4 text-sm text-foreground text-right">₹{service.base_price}</td>
-                      <td className="py-3 px-4 text-sm text-foreground text-right">₹{service.gst_amount}</td>
-                      <td className="py-3 px-4 text-sm text-primary font-medium text-right">₹{service.total_amount}</td>
-                      <td className="py-3 px-4 text-sm">
-                        <span className={`inline-flex px-2 py-1 rounded-full text-xs ${
-                          service.payment_received_by === 'hotel' 
-                            ? 'bg-primary/20 text-primary' 
-                            : 'bg-accent/20 text-accent'
-                        }`}>
-                          {service.payment_received_by === 'hotel' ? 'Hotel' : 'Nirvaana'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
+                  services.map((service, index) => {
+                    const property = getPropertyDetails(service.property_id);
+                    const therapistName = getTherapistName(service.therapist_id, service.therapist_name);
+                    const city = property.location?.split(',')[0] || property.location || 'N/A';
+                    
+                    return (
+                      <tr key={index} className="border-b border-border/30 hover:bg-muted/30">
+                        <td className="py-3 px-3 text-sm text-foreground">{service.date}</td>
+                        <td className="py-3 px-3 text-sm text-muted-foreground">{service.time || 'N/A'}</td>
+                        <td className="py-3 px-3 text-sm text-foreground">{therapistName}</td>
+                        <td className="py-3 px-3 text-sm text-foreground font-medium">{property.hotel_name}</td>
+                        <td className="py-3 px-3 text-sm text-muted-foreground">{city}</td>
+                        <td className="py-3 px-3 text-sm text-foreground">{service.customer_name}</td>
+                        <td className="py-3 px-3 text-sm text-foreground">{service.therapy_type}</td>
+                        <td className="py-3 px-3 text-sm text-foreground text-right">₹{service.base_price}</td>
+                        <td className="py-3 px-3 text-sm text-foreground text-right">₹{service.gst_amount}</td>
+                        <td className="py-3 px-3 text-sm text-primary font-medium text-right">₹{service.total_amount}</td>
+                        <td className="py-3 px-3 text-sm">
+                          <span className={`inline-flex px-2 py-1 rounded-full text-xs ${
+                            service.payment_received_by === 'hotel' 
+                              ? 'bg-primary/20 text-primary' 
+                              : 'bg-accent/20 text-accent'
+                          }`}>
+                            {service.payment_received_by === 'hotel' ? 'Hotel' : 'Nirvaana'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
