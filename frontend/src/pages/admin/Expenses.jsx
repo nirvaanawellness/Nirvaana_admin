@@ -473,15 +473,22 @@ const AdminExpenses = ({ user, onLogout }) => {
           
           <form onSubmit={handleSubmit} className="space-y-4" data-testid="expense-form">
             <div>
-              <Label htmlFor="expense-property">Property *</Label>
+              <Label htmlFor="expense-property">Property</Label>
               <Select 
                 value={formData.property_id} 
                 onValueChange={(value) => setFormData({...formData, property_id: value})}
               >
                 <SelectTrigger id="expense-property" data-testid="expense-property-select">
-                  <SelectValue placeholder="Select property" />
+                  <SelectValue placeholder="Select property or Shared" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="SHARED">
+                    <div className="flex items-center gap-2">
+                      <Share2 className="w-4 h-4 text-purple-600" />
+                      <span className="text-purple-700 font-medium">Shared (All Properties)</span>
+                    </div>
+                  </SelectItem>
+                  <div className="border-t border-border my-1" />
                   {properties.map((prop) => (
                     <SelectItem key={prop.id} value={prop.hotel_name}>
                       {prop.hotel_name}
@@ -489,6 +496,9 @@ const AdminExpenses = ({ user, onLogout }) => {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Select "Shared" for expenses that should be distributed across all active properties (e.g., website costs)
+              </p>
             </div>
 
             <div>
