@@ -8,148 +8,113 @@ Build a secure, scalable, mobile-first internal operations management applicatio
 - **Therapist**: Access to attendance, service entry, personal performance
 
 ## Core Requirements
-- Property/Hotel Management (Admin)
+- Property/Hotel Management (Admin) with Ownership Type support
 - Therapist Onboarding with auto-generated credentials
 - Attendance System (Therapist check-in/out + Admin daily tracking)
-- Service Entry System with GST (18%) calculation
+- Service Entry System with GST (5%) calculation
 - Revenue Split Engine based on property agreements
 - Target & Incentive System
 - Analytics Dashboard with date-based filtering and revenue forecast
-- Expense Tracking System
+- Expense Tracking System with shared expense distribution
 - Monthly Closing System
 - Automated Email Feedback (Resend Integration)
-- WhatsApp/SMS Feedback (Mocked)
 
 ## Tech Stack
 - **Frontend**: React, Tailwind CSS, shadcn/ui, Recharts
 - **Backend**: FastAPI, Pydantic, NumPy
 - **Database**: MongoDB
 - **Authentication**: JWT, OTP (for password change)
-- **Integrations**: Resend (Email - ACTIVE), WhatsApp/SMS (Mocked)
+- **Integrations**: Resend (Email - ACTIVE)
+- **Deployment**: Vercel (Frontend), Render (Backend)
 
 ## What's Been Implemented
 
-### Feb 16, 2026 - Session 3: Email Integration & Analytics Dashboard (P0/P1 Complete)
+### Feb 18, 2026 - Property Ownership Type Feature (P0 Complete)
 
-#### Resend Email Integration (NEW - ACTIVE)
-- **Email Service**: Fully configured with Resend API
-- **Sender**: `Nirvaana Wellness <noreply@nirvaanawellness.com>`
-- **Three Email Flows Working**:
-  1. **Admin OTP Email**: Password reset OTP sent to admin email
-  2. **Therapist Welcome Email**: Auto-generated credentials sent on onboarding
-  3. **Customer Feedback Email**: Sent after service entry with customer email
-- **Feedback Link**: Redirects to `https://www.nirvaanawellness.com/feedback`
-- **Configuration**: `EMAIL_ENABLED=true`, `EMAIL_PROVIDER=resend` in backend/.env
+#### Property Ownership Model
+- **Two ownership types**: 
+  - `our_property` - 100% owned by Nirvaana
+  - `outside_property` - Revenue split with hotel partner
+- **Backend**: `OwnershipType` enum in `models.py`, supported in Property model
+- **Frontend**: Radio button selection in Add/Edit Property forms
 
-#### Analytics Dashboard (NEW)
-- **Analytics Page** (`/admin/analytics`):
-  - Revenue forecast for next month
-  - Confidence level indicator (high/medium/low)
-  - Trend analysis (growing/declining/stable)
-  - Historical data table (6 months)
-  - Interactive area chart with forecast visualization
-  - Methodology explanation section
-- **API Endpoint**: `GET /api/analytics/forecast`
-- **Algorithm**: Weighted Moving Average + Linear Regression
-- **Handles insufficient data gracefully**
+#### Ownership Type Behavior
+- **Our Property**:
+  - Revenue share % field disabled (shows "Not applicable")
+  - Contract Start Date field disabled
+  - Green "Owned" badge on property cards
+  - Shows "100% Nirvaana" instead of hotel share percentage
+  - Sales Report shows "N/A" for Hotel Share, GST Liability, Settlement columns
+  - P&L calculations assign 100% revenue to Nirvaana
 
-#### Bug Fixes
-- **Fixed**: Therapist onboarding error (response not captured from axios call)
-- **Fixed**: Feedback email link now points to actual feedback page
+- **Outside Property** (default):
+  - Revenue share % required
+  - Orange "Split Model" badge on property cards
+  - Full settlement calculations in reports
 
-### Feb 15, 2026 - Session 2: Attendance Tracking, Archiving, OTP Security (P0 Complete)
+#### Ownership Change Confirmation
+- When editing a property and changing ownership type, a confirmation dialog appears
+- Warns user that change affects historical reporting calculations
+- Reports are calculated dynamically (no data loss)
 
-#### Admin Attendance Tracking
-- **Admin Attendance Page** (`/admin/attendance`):
-  - Daily attendance log showing all therapists
-  - Summary cards: Total Therapists, Signed In, Not Signed In, Completion Rate
-  - Date navigation (previous/next day, today button, date picker)
-  - Property filter dropdown
-  - Status indicators: Complete (green), Working (blue), Absent (red)
-  - History button for each therapist to view historical records
-- **Attendance History Dialog**:
-  - Date range filter
-  - Full attendance history for selected therapist
-  - Shows sign-in/out times and status for each day
-- **New API Endpoints**:
-  - `GET /api/attendance/admin/daily` - Daily attendance with checked_in and not_checked_in lists
-  - `GET /api/attendance/admin/history/{therapist_id}` - Therapist attendance history
+#### Improved Bar Chart
+- Grouped bar chart with thinner bars, rounded corners
+- Custom tooltips showing property details
+- Clear legend with color indicators
+- Y-axis shows values in "₹Xk" format for readability
+- Shows distributed expense note when "Other" expenses are split
 
-#### Archiving System (Soft Delete)
-- Properties and Therapists can now be "archived" instead of deleted
-- Archived items preserve historical data for reports and settlements
-- **Properties Page**: Shows "X Active • Y Archived" sections
-- **Therapists Page**: Shows "X Active • Y Archived" sections
-- Archive button with confirmation dialog
-- Restore button for archived items
-- **API Endpoints**:
-  - `DELETE /api/properties/{id}` - Archives property (soft delete)
-  - `PUT /api/properties/{id}/restore` - Restores archived property
-  - `DELETE /api/therapists/{id}` - Archives therapist (soft delete)
-  - `PUT /api/therapists/{id}/restore` - Restores archived therapist
-  - `GET /api/properties?include_archived=true` - Include archived in list
+#### Shared Expense Allocation
+- Expenses with type "other" (not property-specific) are distributed equally
+- Distribution happens at report level (not stored in DB)
+- Note displayed on chart when distribution is active
 
-#### OTP-Based Admin Password Change (NEW)
-- **Settings Page** (`/admin/settings`):
-  - Account Security section with email display
-  - Change Password button with 3-step dialog flow
-- **Password Change Flow**:
-  1. Request OTP (6-digit code sent to admin email)
-  2. Verify OTP (validates code, allows retry)
-  3. Enter new password (min 6 characters, with confirmation)
-- **Dev Mode**: OTP displayed in UI when email service unavailable
-- **API Endpoints**:
-  - `POST /api/auth/request-otp` - Generate and send OTP (admin only)
-  - `POST /api/auth/verify-otp` - Verify OTP without changing password
-  - `POST /api/auth/change-password` - Change password after OTP verification
+### Previous Sessions Summary
 
-#### UI Branding (NEW)
-- Shared AppHeader component with logo and "Nirvaana Wellness" in golden letters
-- Dark gradient header across all admin pages
-- Settings link in admin dashboard header
-- Attendance card added to admin dashboard navigation
+#### Session 4 - Deployment & Bug Fixes
+- Deployed to Vercel (frontend) and Render (backend)
+- Created deployment config files (Procfile, runtime.txt, vercel.json)
+- Implemented `/api/auth/init-admin` endpoint
+- Added Edit functionality for Properties and Therapists
+- Fixed GST rate to 5% (was 18%)
+- Fixed email portal URL
+- Added Services Excel export
+- Updated attendance to 9-hour workday logic
 
-### Feb 15, 2026 - Session 1: GST-Separated Financial Reporting (P0 Complete)
-**This update corrects the fundamental business logic for financial calculations.**
+#### Session 3 - Email Integration & Analytics
+- Resend email integration (OTP, Welcome, Feedback)
+- Analytics dashboard with revenue forecast
+- Fixed therapist onboarding response handling
 
-#### Core Business Logic (CORRECTED)
-- **Revenue share % is applied ONLY on Base Amount (excluding GST)**
-- **GST is tracked separately and settled proportionately**
-- **Profit Formula**: `Net Profit = Our Base Share – Expenses` (GST excluded)
+#### Session 2 - Attendance & Archiving
+- Admin attendance tracking page
+- Soft delete (archiving) for properties and therapists
+- OTP-based admin password change
+- Settings page
 
-#### Reports Page - Complete Overhaul
-**7 Summary Cards (GST-Separated)**:
-- Base Revenue, GST Collected, Gross Revenue
-- Hotel Base Share, Our Base Share, Expenses, Net Profit
-
-**Sales Report Dialog**: Full GST breakdown with settlement calculations
-**P&L Report Dialog**: Three segments (Selection, Current Period, All-Time)
-**Charts**: Our Base Share vs Expenses with property breakdown
-
-### Previous Implementations
-- User authentication for Admin and Therapist roles
-- Property management (CRUD)
-- Therapist onboarding with email credentials
-- Service entry with GST calculation
-- Basic admin dashboard with statistics
-- Revenue distribution tracking (Hotel vs Nirvaana)
-- Month timeline scroller for admin dashboard
-- Expense tracking system with CRUD
+#### Session 1 - GST-Separated Reporting
+- Corrected revenue share logic (apply % to BASE only, not gross)
+- Sales Report with full GST breakdown
+- P&L Report with 3 segments (Selection, Current, All-Time)
 
 ## API Endpoints
+
 ### Authentication
 - `POST /api/auth/login` - User authentication
 - `POST /api/auth/request-otp` - Request OTP for password change (admin)
 - `POST /api/auth/verify-otp` - Verify OTP
 - `POST /api/auth/change-password` - Change password with OTP
+- `GET /api/auth/init-admin` - Create initial admin user
 
 ### Properties
-- `GET/POST /api/properties` - Property management
+- `GET/POST /api/properties` - Property management (includes ownership_type)
+- `PUT /api/properties/{id}` - Update property (including ownership type change)
 - `DELETE /api/properties/{id}` - Archive property (soft delete)
 - `PUT /api/properties/{id}/restore` - Restore archived property
 
 ### Therapists
 - `GET/POST /api/therapists` - Therapist management
+- `PUT /api/therapists/{id}` - Update therapist
 - `DELETE /api/therapists/{id}` - Archive therapist (soft delete)
 - `PUT /api/therapists/{id}/restore` - Restore archived therapist
 
@@ -164,77 +129,58 @@ Build a secure, scalable, mobile-first internal operations management applicatio
 
 ### Analytics
 - `GET /api/analytics/dashboard` - Dashboard analytics
-- `GET /api/analytics/forecast` - Revenue forecast (weighted moving average)
+- `GET /api/analytics/forecast` - Revenue forecast
 
 ## Test Credentials
-- **Admin**: admin@nirvaana.com / admin123
-- **Therapist**: anita@nirvaana.com / therapist123
+- **Admin**: admin / admin123 (or nirvaanabysunrise@gmail.com / admin123)
+- **Therapist**: Created via admin panel
 
 ## Prioritized Backlog
 
 ### P0 (Critical) - ALL COMPLETED ✅
-- [x] Dashboard month timeline scroller ✅
-- [x] Reports page with downloadable reports ✅
-- [x] Expense tracking system ✅
-- [x] GST-separated financial reporting logic ✅
-- [x] Admin password change with OTP verification ✅
-- [x] Therapist deactivation flow (archiving) ✅
-- [x] Admin attendance tracking ✅
+- [x] Property ownership type feature
+- [x] Dynamic reporting based on ownership
+- [x] Improved bar chart visualization
+- [x] Ownership badges on property cards
+- [x] Ownership change confirmation dialog
 
 ### P1 (High Priority)
-- [ ] Full analytics dashboard UI with forecast graph
-- [ ] Revenue forecasting display (backend done, needs frontend)
+- [x] "Other" expense distribution across properties ✅
 
 ### P2 (Medium Priority)
 - [ ] Automated monthly closing system
 - [ ] SMS backup system for notifications
 
 ### P3 (Low Priority)
-- [ ] Email therapist ID proofs to nirvaanabysunrise@gmail.com
-- [ ] Functional SMS/WhatsApp integration (requires user API keys)
-
-## Known Mocked Features
-- WhatsApp feedback messages (placeholder)
-- SMS notifications (placeholder)
+- [ ] Email therapist ID proofs to admin
+- [ ] Functional SMS/WhatsApp integration (requires API keys)
 
 ## File Structure
 ```
 /app/
 ├── backend/
-│   ├── server.py (main API - 1000+ lines)
-│   ├── models.py (Pydantic models with EntityStatus)
+│   ├── server.py (main API - updated for ownership type)
+│   ├── models.py (includes OwnershipType enum)
 │   ├── auth.py (JWT auth)
 │   ├── email_service.py
-│   └── whatsapp_service.py (mocked)
+│   ├── Procfile, runtime.txt (deployment)
+│   └── tests/
+│       └── test_ownership_type.py (comprehensive tests)
 ├── frontend/
 │   └── src/
-│       ├── App.js (routes including /admin/attendance)
-│       ├── components/
-│       │   └── shared/
-│       │       └── AppHeader.jsx (branded header)
-│       └── pages/
-│           ├── Login.jsx
-│           ├── admin/
-│           │   ├── Dashboard.jsx (with timeline + attendance nav)
-│           │   ├── Attendance.jsx (NEW - daily tracking)
-│           │   ├── Settings.jsx (NEW - OTP password change)
-│           │   ├── Reports.jsx (GST-separated)
-│           │   ├── Expenses.jsx
-│           │   ├── Properties.jsx (with archiving)
-│           │   ├── Therapists.jsx (with archiving)
-│           │   └── Services.jsx
-│           └── therapist/
-│               ├── Dashboard.jsx
-│               ├── Attendance.jsx
-│               └── ServiceEntry.jsx
+│       ├── pages/admin/
+│       │   ├── Properties.jsx (ownership selection, badges, confirmation)
+│       │   ├── Reports.jsx (ownership-aware calculations, improved chart)
+│       │   └── ... other pages
+│       └── components/
 ├── test_reports/
-│   └── iteration_3.json (latest test results)
+│   └── iteration_5.json (latest test results - 100% pass)
 └── memory/
     └── PRD.md
 ```
 
 ## Test Reports
-- `/app/test_reports/iteration_3.json` - Latest test results (Feb 15, 2026)
-  - Backend: 90% pass rate (19/22 tests)
-  - Frontend: 100% pass rate
-  - All new features verified working
+- `/app/test_reports/iteration_5.json` - Latest test results
+  - Backend: 100% pass rate (11/11 tests)
+  - Frontend: 100% pass rate (All UI features verified)
+  - All ownership type features tested and working
