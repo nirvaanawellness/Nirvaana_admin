@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Building2, Plus, MapPin, Phone, Calendar, Percent, RotateCcw, Archive, CheckCircle, Pencil, Home, Handshake } from 'lucide-react';
+import { Building2, Plus, MapPin, Phone, Calendar, Percent, RotateCcw, Archive, CheckCircle, Pencil, Home, Handshake, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
