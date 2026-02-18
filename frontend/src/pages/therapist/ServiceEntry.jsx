@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, User, Phone, Mail, Sparkles, DollarSign, Clock, CreditCard } from 'lucide-react';
+import { ArrowLeft, User, Phone, Mail, Sparkles, DollarSign, Clock, CreditCard, Building2, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -33,6 +33,7 @@ const therapyTypes = [
 const TherapistServiceEntry = ({ user, onLogout }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [propertyInfo, setPropertyInfo] = useState(null);
   const [formData, setFormData] = useState({
     customer_name: '',
     customer_phone: '',
@@ -48,6 +49,43 @@ const TherapistServiceEntry = ({ user, onLogout }) => {
     gst: 0,
     total: 0
   });
+
+  // Fetch property info to check if it's owned
+  useEffect(() => {
+    const fetchPropertyInfo = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${API}/properties`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // Find the property assigned to this therapist
+        const assignedProperty = response.data.find(
+          p => p.hotel_name === user.assigned_property_id
+        );
+        
+        if (assignedProperty) {
+          setPropertyInfo(assignedProperty);
+          
+          // If property is "our_property", auto-set payment to nirvaana
+          if (assignedProperty.ownership_type === 'our_property') {
+            setFormData(prev => ({
+              ...prev,
+              payment_received_by: 'nirvaana'
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch property info:', error);
+      }
+    };
+    
+    if (user?.assigned_property_id) {
+      fetchPropertyInfo();
+    }
+  }, [user]);
+
+  const isOwnedProperty = propertyInfo?.ownership_type === 'our_property';
 
   const handleBasePrice = (value) => {
     const price = parseFloat(value) || 0;
@@ -66,7 +104,9 @@ const TherapistServiceEntry = ({ user, onLogout }) => {
       const payload = {
         ...formData,
         base_price: parseFloat(formData.base_price),
-        customer_email: formData.customer_email || null
+        customer_email: formData.customer_email || null,
+        // For owned properties, always set to nirvaana
+        payment_received_by: isOwnedProperty ? 'nirvaana' : formData.payment_received_by
       };
 
       const response = await axios.post(`${API}/services`, payload, {
@@ -108,6 +148,29 @@ const TherapistServiceEntry = ({ user, onLogout }) => {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-6">
+        {/* Property Info Banner */}
+        {propertyInfo && (
+          <div className={`mb-4 p-3 rounded-lg flex items-center gap-3 ${
+            isOwnedProperty 
+              ? 'bg-green-50 border border-green-200' 
+              : 'bg-amber-50 border border-amber-200'
+          }`}>
+            {isOwnedProperty ? (
+              <Home className="w-5 h-5 text-green-600" />
+            ) : (
+              <Building2 className="w-5 h-5 text-amber-600" />
+            )}
+            <div>
+              <p className={`text-sm font-medium ${isOwnedProperty ? 'text-green-700' : 'text-amber-700'}`}>
+                {propertyInfo.hotel_name}
+              </p>
+              <p className={`text-xs ${isOwnedProperty ? 'text-green-600' : 'text-amber-600'}`}>
+                {isOwnedProperty ? 'Owned Property - Payment to Nirvaana' : 'Partner Property'}
+              </p>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="glass rounded-2xl p-6 space-y-6" data-testid="service-entry-form">
           <div className="space-y-4">
             <div>
@@ -231,19 +294,31 @@ const TherapistServiceEntry = ({ user, onLogout }) => {
 
             <div>
               <Label htmlFor="payment_received_by">Payment Received By</Label>
-              <Select
-                value={formData.payment_received_by}
-                onValueChange={(value) => setFormData({ ...formData, payment_received_by: value })}
-                required
-              >
-                <SelectTrigger className="h-12 mt-2" data-testid="payment-receiver-select">
-                  <SelectValue placeholder="Select who received payment" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="hotel">Hotel</SelectItem>
-                  <SelectItem value="nirvaana">Nirvaana Wellness</SelectItem>
-                </SelectContent>
-              </Select>
+              {isOwnedProperty ? (
+                <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Home className="w-4 h-4 text-green-600" />
+                    <span className="text-green-700 font-medium">Nirvaana Wellness</span>
+                  </div>
+                  <p className="text-xs text-green-600 mt-1">
+                    This is an owned property - all payments go to Nirvaana
+                  </p>
+                </div>
+              ) : (
+                <Select
+                  value={formData.payment_received_by}
+                  onValueChange={(value) => setFormData({ ...formData, payment_received_by: value })}
+                  required
+                >
+                  <SelectTrigger className="h-12 mt-2" data-testid="payment-receiver-select">
+                    <SelectValue placeholder="Select who received payment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hotel">Hotel</SelectItem>
+                    <SelectItem value="nirvaana">Nirvaana Wellness</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div>
