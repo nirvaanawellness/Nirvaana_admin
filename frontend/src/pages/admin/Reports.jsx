@@ -397,14 +397,15 @@ const AdminReports = ({ user, onLogout }) => {
       byProperty[propId].push(s);
     });
     
-    // Calculate total "Other" expenses for distribution
-    const otherExpensesTotal = expenses
-      .filter(e => e.expense_type === 'other')
+    // Calculate total SHARED expenses (expenses without property_id) for distribution
+    // These are expenses like "Website Development" that benefit all properties equally
+    const sharedExpensesTotal = expenses
+      .filter(e => !e.property_id || e.property_id === '' || e.property_id === 'SHARED')
       .reduce((sum, e) => sum + e.amount, 0);
     
-    // Calculate distributed "Other" expense per active property
-    const distributedOtherExpense = activePropertiesCount > 0 
-      ? otherExpensesTotal / activePropertiesCount 
+    // Calculate distributed shared expense per active property
+    const distributedSharedExpense = activePropertiesCount > 0 
+      ? sharedExpensesTotal / activePropertiesCount 
       : 0;
     
     // Calculate GST-aware data per property
@@ -413,13 +414,13 @@ const AdminReports = ({ user, onLogout }) => {
       const hotelSharePercent = isOwned ? 0 : getPropertyShare(propId);
       const settlement = calculateGSTAwareSettlement(propServices, hotelSharePercent, isOwned);
       
-      // Get expenses for this property (excluding "Other" which is distributed)
+      // Get expenses directly linked to this property
       const propExpenses = expenses
-        .filter(e => e.property_id === propId && e.expense_type !== 'other')
+        .filter(e => e.property_id === propId)
         .reduce((sum, e) => sum + e.amount, 0);
       
-      // Total expenses for this property = direct expenses + distributed "Other" expenses
-      const totalPropertyExpenses = propExpenses + distributedOtherExpense;
+      // Total expenses for this property = direct expenses + distributed shared expenses
+      const totalPropertyExpenses = propExpenses + distributedSharedExpense;
       
       return {
         name: propId,
@@ -430,7 +431,7 @@ const AdminReports = ({ user, onLogout }) => {
         hotelBaseShare: settlement.hotelBaseShare,
         expenses: totalPropertyExpenses,
         directExpenses: propExpenses,
-        distributedExpenses: distributedOtherExpense,
+        distributedExpenses: distributedSharedExpense,
         hotelSharePercent,
         isOurProperty: isOwned
       };
