@@ -146,6 +146,26 @@ Build a secure, scalable, mobile-first internal operations management applicatio
 
 ### P1 (High Priority)
 - [x] "Other" expense distribution across properties ✅
+- [x] Shared expenses (no property_id) distributed equally ✅
+
+### Feb 18, 2026 - Shared Expense Distribution Feature (P1 Complete)
+
+#### Shared Expense Logic
+- Expenses without a property_id are treated as "Shared" expenses
+- Examples: Website development, software subscriptions, marketing costs
+- **Distribution Rule**: Total shared expense ÷ Number of active (non-archived) properties
+- Distribution is **calculated dynamically** at report level
+- **No database duplication** - original expense entry unchanged
+
+#### UI Changes
+- **Expenses Page**: "Shared (All Properties)" option in property dropdown
+- Purple badge shows "Shared (All Properties)" in expense table
+- Helper text: "Select 'Shared' for expenses that should be distributed across all active properties"
+
+#### Reports Integration
+- Bar chart tooltip shows distributed expense per property
+- Note below chart: "* Shared expenses (₹X/property) distributed equally across all N active properties"
+- P&L calculations include distributed shared expenses in each property's total
 
 ### P2 (Medium Priority)
 - [ ] Automated monthly closing system
