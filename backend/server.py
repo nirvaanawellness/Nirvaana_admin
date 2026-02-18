@@ -698,22 +698,38 @@ async def create_service_entry(service_data: ServiceEntryCreate, current_user: d
     property_name = therapist["assigned_property_id"]
     therapist_name = therapist.get("full_name", "Our therapist")
     
+    # Check if property is owned (for payment validation)
+    property_doc = await db.properties.find_one({"hotel_name": property_name})
+    is_owned_property = property_doc and property_doc.get("ownership_type") == "our_property"
+    
+    # For owned properties, payment must be to nirvaana
+    payment_received_by = "nirvaana" if is_owned_property else service_data.payment_received_by
+    
     gst_amount = round(service_data.base_price * 0.05, 2)
     total_amount = round(service_data.base_price + gst_amount, 2)
     
-    now = datetime.now(timezone.utc)
-    service_date = now.strftime("%Y-%m-%d")
+    # Use IST (Indian Standard Time) for date/time - UTC + 5:30
+    from datetime import timedelta
+    utc_now = datetime.now(timezone.utc)
+    ist_offset = timedelta(hours=5, minutes=30)
+    ist_now = utc_now + ist_offset
+    
+    service_date = ist_now.strftime("%Y-%m-%d")
+    service_time = ist_now.strftime("%H:%M:%S")
+    
     service_dict = service_data.model_dump()
     service_dict.update({
         "therapist_id": current_user["user_id"],
+        "therapist_name": therapist_name,  # Store therapist name for easy lookup
         "property_id": therapist["assigned_property_id"],
         "gst_amount": gst_amount,
         "total_amount": total_amount,
         "date": service_date,
-        "time": now.strftime("%H:%M:%S"),
+        "time": service_time,
+        "payment_received_by": payment_received_by,  # Override for owned properties
         "locked": True,
         "feedback_email_sent": False,
-        "created_at": now.isoformat()
+        "created_at": utc_now.isoformat()  # Keep UTC for internal tracking
     })
     
     result = await db.services.insert_one(service_dict)
