@@ -1019,7 +1019,7 @@ const AdminReports = ({ user, onLogout }) => {
             {/* Show distributed expense note if applicable */}
             {chartData.some(d => d.distributedExpenses > 0) && (
               <p className="text-xs text-muted-foreground mt-2 text-center">
-                * "Other" expenses (₹{chartData[0]?.distributedExpenses?.toFixed(0) || 0}) distributed equally across all active properties
+                * Shared expenses (₹{chartData[0]?.distributedExpenses?.toFixed(0) || 0}/property) distributed equally across all {activePropertiesCount} active properties
               </p>
             )}
           </div>
