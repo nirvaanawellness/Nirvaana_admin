@@ -595,8 +595,9 @@ const AdminReports = ({ user, onLogout }) => {
         let nirvaanaBaseShare = 0;
         
         Object.entries(byProperty).forEach(([propId, propServices]) => {
-          const hotelSharePercent = getPropertyShare(propId);
-          const settlement = calculateGSTAwareSettlement(propServices, hotelSharePercent);
+          const isOwned = isPropertyOwned(propId);
+          const hotelSharePercent = isOwned ? 0 : getPropertyShare(propId);
+          const settlement = calculateGSTAwareSettlement(propServices, hotelSharePercent, isOwned);
           
           baseRevenue += settlement.baseRevenue;
           gstCollected += settlement.gstCollected;
