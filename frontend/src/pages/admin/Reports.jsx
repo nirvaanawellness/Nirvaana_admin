@@ -446,16 +446,16 @@ const AdminReports = ({ user, onLogout }) => {
    * 1. Base Revenue (Excl. GST)
    * 2. GST Collected
    * 3. Gross Revenue (Incl. GST)
-   * 4. Share %
-   * 5. Hotel Expected (Base)
-   * 6. Hotel GST Liability
-   * 7. Hotel Total Expected
+   * 4. Share % (N/A for Our Property)
+   * 5. Hotel Expected (Base) - N/A for Our Property
+   * 6. Hotel GST Liability - N/A for Our Property
+   * 7. Hotel Total Expected - N/A for Our Property
    * 8. Hotel Received (Actual)
    * 9. Our Expected (Base)
    * 10. Our GST Liability
    * 11. Our Total Expected
    * 12. Our Received (Actual)
-   * 13. Settlement Amount
+   * 13. Settlement Amount - N/A for Our Property
    */
   const generateSalesReport = () => {
     // Group services by property
@@ -472,12 +472,14 @@ const AdminReports = ({ user, onLogout }) => {
     // Calculate full GST-aware breakdown per property
     const reportData = Object.entries(propertyGroups).map(([propId, propServices]) => {
       const prop = properties.find(p => p.hotel_name === propId);
-      const hotelSharePercent = prop?.revenue_share_percentage || 50;
+      const isOwned = prop?.ownership_type === 'our_property';
+      const hotelSharePercent = isOwned ? 0 : (prop?.revenue_share_percentage || 50);
       
-      const settlement = calculateGSTAwareSettlement(propServices, hotelSharePercent);
+      const settlement = calculateGSTAwareSettlement(propServices, hotelSharePercent, isOwned);
       
       return {
         property_name: prop?.hotel_name || propId,
+        ownership_type: isOwned ? 'our_property' : 'outside_property',
         hotel_share_percent: hotelSharePercent,
         
         // Revenue breakdown
@@ -485,10 +487,10 @@ const AdminReports = ({ user, onLogout }) => {
         gst_collected: settlement.gstCollected,
         gross_revenue: settlement.grossRevenue,
         
-        // Hotel breakdown
-        hotel_base_expected: settlement.hotelBaseShare,
-        hotel_gst_liability: settlement.hotelGSTLiability,
-        hotel_total_expected: settlement.hotelExpectedTotal,
+        // Hotel breakdown (N/A for owned properties)
+        hotel_base_expected: isOwned ? null : settlement.hotelBaseShare,
+        hotel_gst_liability: isOwned ? null : settlement.hotelGSTLiability,
+        hotel_total_expected: isOwned ? null : settlement.hotelExpectedTotal,
         hotel_received: settlement.hotelCollectedGross,
         
         // Nirvaana breakdown
@@ -497,9 +499,11 @@ const AdminReports = ({ user, onLogout }) => {
         our_total_expected: settlement.nirvaanaExpectedTotal,
         our_received: settlement.nirvaanaCollectedGross,
         
-        // Settlement
-        hotel_settlement: settlement.hotelSettlement,
-        our_settlement: settlement.nirvaanaSettlement
+        // Settlement (N/A for owned properties)
+        hotel_settlement: isOwned ? null : settlement.hotelSettlement,
+        our_settlement: isOwned ? null : settlement.nirvaanaSettlement,
+        
+        isOurProperty: isOwned
       };
     });
     
