@@ -202,9 +202,10 @@ const AdminExpenses = ({ user, onLogout }) => {
     
     const rows = expenses.map(exp => {
       const property = properties.find(p => p.hotel_name === exp.property_id);
+      const isShared = !exp.property_id;
       return [
         exp.date,
-        property?.hotel_name || exp.property_id,
+        isShared ? 'Shared (All Properties)' : (property?.hotel_name || exp.property_id),
         exp.category,
         exp.expense_type,
         exp.amount,
