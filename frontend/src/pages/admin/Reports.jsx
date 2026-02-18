@@ -275,6 +275,17 @@ const AdminReports = ({ user, onLogout }) => {
     return prop?.revenue_share_percentage || 50;
   };
 
+  // Check if property is "Our Property" (100% owned)
+  const isPropertyOwned = (propertyId) => {
+    const prop = properties.find(p => p.hotel_name === propertyId || p.id === propertyId);
+    return prop?.ownership_type === 'our_property';
+  };
+
+  // Get count of active properties for expense distribution
+  const activePropertiesCount = useMemo(() => {
+    return properties.filter(p => p.status !== 'archived').length;
+  }, [properties]);
+
   /**
    * CORRECTED SUMMARY CALCULATION
    * 
