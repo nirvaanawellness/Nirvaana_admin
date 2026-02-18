@@ -1064,23 +1064,43 @@ const AdminReports = ({ user, onLogout }) => {
                     {salesReportData.map((p, i) => {
                       // Settlement: Positive hotel_settlement = Nirvaana owes Hotel
                       // Positive our_settlement = Hotel owes Nirvaana
-                      const settlementAmount = Math.abs(p.hotel_settlement);
-                      const settlementDirection = p.hotel_settlement > 0.5 ? 'pay_hotel' : p.hotel_settlement < -0.5 ? 'pay_nirvaana' : 'settled';
+                      const isOwned = p.isOurProperty;
+                      const settlementAmount = p.hotel_settlement !== null ? Math.abs(p.hotel_settlement) : 0;
+                      const settlementDirection = !isOwned && p.hotel_settlement > 0.5 ? 'pay_hotel' : !isOwned && p.hotel_settlement < -0.5 ? 'pay_nirvaana' : isOwned ? 'owned' : 'settled';
                       
                       return (
-                        <tr key={i} className="border-b hover:bg-muted/20">
-                          <td className="py-2 px-1.5 font-medium">{p.property_name}</td>
-                          <td className="py-2 px-1.5 text-center">{p.hotel_share_percent}%</td>
+                        <tr key={i} className={`border-b hover:bg-muted/20 ${isOwned ? 'bg-green-50/30' : ''}`}>
+                          <td className="py-2 px-1.5 font-medium">
+                            <div className="flex items-center gap-2">
+                              {p.property_name}
+                              {isOwned && (
+                                <span className="px-1.5 py-0.5 text-[9px] rounded-full bg-green-100 text-green-700">Owned</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-2 px-1.5 text-center">
+                            {isOwned ? (
+                              <span className="text-green-600 text-[10px]">100%</span>
+                            ) : (
+                              `${p.hotel_share_percent}%`
+                            )}
+                          </td>
                           
                           {/* Revenue Breakdown */}
                           <td className="py-2 px-1.5 text-right bg-gray-50/50">₹{p.base_revenue.toFixed(0)}</td>
                           <td className="py-2 px-1.5 text-right bg-gray-50/50 text-blue-600">₹{p.gst_collected.toFixed(0)}</td>
                           <td className="py-2 px-1.5 text-right bg-gray-50/50 font-medium">₹{p.gross_revenue.toFixed(0)}</td>
                           
-                          {/* Hotel Columns */}
-                          <td className="py-2 px-1.5 text-right bg-amber-50/30">₹{p.hotel_base_expected.toFixed(0)}</td>
-                          <td className="py-2 px-1.5 text-right bg-amber-50/30 text-blue-600">₹{p.hotel_gst_liability.toFixed(0)}</td>
-                          <td className="py-2 px-1.5 text-right bg-amber-50/30 font-medium">₹{p.hotel_total_expected.toFixed(0)}</td>
+                          {/* Hotel Columns - N/A for owned properties */}
+                          <td className="py-2 px-1.5 text-right bg-amber-50/30">
+                            {isOwned ? <span className="text-muted-foreground text-[10px]">N/A</span> : `₹${p.hotel_base_expected?.toFixed(0) || 0}`}
+                          </td>
+                          <td className="py-2 px-1.5 text-right bg-amber-50/30 text-blue-600">
+                            {isOwned ? <span className="text-muted-foreground text-[10px]">N/A</span> : `₹${p.hotel_gst_liability?.toFixed(0) || 0}`}
+                          </td>
+                          <td className="py-2 px-1.5 text-right bg-amber-50/30 font-medium">
+                            {isOwned ? <span className="text-muted-foreground text-[10px]">N/A</span> : `₹${p.hotel_total_expected?.toFixed(0) || 0}`}
+                          </td>
                           <td className="py-2 px-1.5 text-right bg-amber-50/30">₹{p.hotel_received.toFixed(0)}</td>
                           
                           {/* Nirvaana Columns */}
@@ -1089,15 +1109,15 @@ const AdminReports = ({ user, onLogout }) => {
                           <td className="py-2 px-1.5 text-right bg-primary/5 font-medium">₹{p.our_total_expected.toFixed(0)}</td>
                           <td className="py-2 px-1.5 text-right bg-primary/5">₹{p.our_received.toFixed(0)}</td>
                           
-                          {/* Settlement */}
+                          {/* Settlement - N/A for owned properties */}
                           <td className="py-2 px-1.5 text-right bg-green-50/50 font-medium">
-                            {settlementDirection === 'pay_hotel' && (
+                            {isOwned ? (
+                              <span className="text-green-600 text-[10px]">N/A</span>
+                            ) : settlementDirection === 'pay_hotel' ? (
                               <span className="text-amber-700">→ Hotel ₹{settlementAmount.toFixed(0)}</span>
-                            )}
-                            {settlementDirection === 'pay_nirvaana' && (
+                            ) : settlementDirection === 'pay_nirvaana' ? (
                               <span className="text-primary">→ Us ₹{settlementAmount.toFixed(0)}</span>
-                            )}
-                            {settlementDirection === 'settled' && (
+                            ) : (
                               <span className="text-green-600">Settled</span>
                             )}
                           </td>
