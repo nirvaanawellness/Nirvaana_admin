@@ -555,6 +555,154 @@ Contact: +91-9520034538
         else:
             return {"success": False, "message": f"Unknown provider: {self.provider}"}
 
+    async def send_property_reassignment_email(
+        self,
+        therapist_email: str,
+        therapist_name: str,
+        username: str,
+        new_property: str,
+        property_location: str,
+        old_property: str
+    ) -> dict:
+        """
+        Send email to therapist informing about property reassignment
+        Same credentials, just new property assignment
+        """
+        
+        if not self.enabled:
+            logger.info("Email service is disabled. Reassignment email not sent.")
+            return {"success": False, "message": "Email service disabled"}
+        
+        subject = f"Nirvaana Wellness - Property Reassignment to {new_property}"
+        
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: 'Arial', sans-serif; line-height: 1.6; color: #2C2420; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #2C2420 0%, #B89D62 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .logo {{ font-size: 28px; font-weight: bold; margin-bottom: 10px; }}
+        .content {{ background: #F9F8F6; padding: 30px; border-radius: 0 0 10px 10px; }}
+        .info-box {{ background: white; padding: 20px; margin: 20px 0; border-radius: 10px; border-left: 4px solid #B89D62; }}
+        .change-box {{ display: flex; align-items: center; justify-content: center; gap: 20px; margin: 20px 0; }}
+        .property-box {{ background: white; padding: 15px 25px; border-radius: 10px; text-align: center; }}
+        .property-box.old {{ border: 2px dashed #ccc; color: #999; }}
+        .property-box.new {{ border: 2px solid #B89D62; }}
+        .property-name {{ font-size: 18px; font-weight: bold; }}
+        .property-location {{ font-size: 12px; color: #6B5E55; margin-top: 5px; }}
+        .arrow {{ font-size: 24px; color: #B89D62; }}
+        .credentials {{ background: #2C2420; color: white; padding: 20px; margin: 20px 0; border-radius: 10px; }}
+        .credentials p {{ margin: 8px 0; }}
+        .credentials strong {{ color: #B89D62; }}
+        .button {{ display: inline-block; background: #B89D62; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; margin-top: 20px; }}
+        .footer {{ text-align: center; margin-top: 20px; color: #6B5E55; font-size: 12px; }}
+        .note {{ background: #E8F4FD; padding: 15px; border-radius: 5px; margin: 20px 0; color: #0277BD; font-size: 14px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">NIRVAANA WELLNESS</div>
+            <p>Property Reassignment Notice</p>
+        </div>
+        
+        <div class="content">
+            <h2>Hello {therapist_name},</h2>
+            
+            <p>We are writing to inform you that your assigned property has been updated in the Nirvaana Wellness system.</p>
+            
+            <div class="change-box">
+                <div class="property-box old">
+                    <div style="font-size: 10px; text-transform: uppercase; color: #999;">Previous</div>
+                    <div class="property-name">{old_property}</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="property-box new">
+                    <div style="font-size: 10px; text-transform: uppercase; color: #B89D62;">New Assignment</div>
+                    <div class="property-name">{new_property}</div>
+                    <div class="property-location">{property_location}</div>
+                </div>
+            </div>
+            
+            <div class="note">
+                📌 <strong>Important:</strong> Your login credentials remain the same. All your past service records and attendance history are preserved.
+            </div>
+            
+            <div class="credentials">
+                <p style="text-align: center; margin-bottom: 15px; font-size: 14px;">YOUR LOGIN CREDENTIALS</p>
+                <p><strong>Username:</strong> {username}</p>
+                <p><strong>Password:</strong> (Your existing password - unchanged)</p>
+                <p><strong>Portal:</strong> <a href="{self.portal_url}" style="color: #B89D62;">{self.portal_url}</a></p>
+            </div>
+            
+            <div class="info-box">
+                <p><strong>What this means for you:</strong></p>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li>All new services will be recorded under <strong>{new_property}</strong></li>
+                    <li>Daily attendance will be tracked at your new location</li>
+                    <li>Your historical data remains accessible</li>
+                </ul>
+            </div>
+            
+            <p style="text-align: center;">
+                <a href="{self.portal_url}" class="button">Login to Portal</a>
+            </p>
+            
+            <p>If you have any questions about this change, please contact your supervisor or the admin team.</p>
+            
+            <p><strong>Best regards,</strong><br>
+            Team Nirvaana Wellness</p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated notification. Please do not reply.</p>
+            <p>© 2026 Nirvaana Wellness. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+        
+        text_content = f"""
+Nirvaana Wellness - Property Reassignment Notice
+
+Hello {therapist_name},
+
+Your assigned property has been updated in the Nirvaana Wellness system.
+
+PROPERTY CHANGE:
+Previous: {old_property}
+New Assignment: {new_property} ({property_location})
+
+IMPORTANT: Your login credentials remain the same.
+
+YOUR LOGIN CREDENTIALS:
+Username: {username}
+Password: (Your existing password - unchanged)
+Portal: {self.portal_url}
+
+What this means for you:
+- All new services will be recorded under {new_property}
+- Daily attendance will be tracked at your new location
+- Your historical data remains accessible
+
+If you have any questions, please contact your supervisor.
+
+Best regards,
+Team Nirvaana Wellness
+
+© 2026 Nirvaana Wellness. All rights reserved.
+"""
+        
+        if self.provider == "resend":
+            return await self._send_via_resend(therapist_email, subject, html_content, text_content)
+        elif self.provider == "sendgrid":
+            return await self._send_via_sendgrid(therapist_email, subject, html_content, text_content)
+        else:
+            return {"success": False, "message": f"Unknown provider: {self.provider}"}
+
 
 # Global instance
 email_service = EmailService()
