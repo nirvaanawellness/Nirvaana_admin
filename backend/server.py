@@ -167,6 +167,8 @@ async def create_property(property_data: PropertyCreate, current_user: dict = De
     prop_dict["status"] = "active"
     
     result = await db.properties.insert_one(prop_dict)
+    # Remove _id added by MongoDB and add string id
+    prop_dict.pop("_id", None)
     prop_dict["id"] = str(result.inserted_id)
     return prop_dict
 
