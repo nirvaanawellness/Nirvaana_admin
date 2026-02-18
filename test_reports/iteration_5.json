@@ -1,0 +1,82 @@
+{
+  "summary": "Completed comprehensive testing of Property Ownership Type feature. All backend tests passed (11/11). Frontend UI tests confirmed: ownership type selection (radio buttons), field disabling for 'Our Property', ownership badges on cards, ownership change confirmation dialog, and Sales Report N/A display for owned properties.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "POST /api/properties",
+        "issue": "Fixed - MongoDB ObjectId serialization error. The _id field was being returned in response causing JSON serialization to fail. Added prop_dict.pop('_id', None) before returning.",
+        "status": "RESOLVED"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_ownership_type.py",
+    "/app/test_reports/pytest/pytest_ownership.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Existing properties in DB have ownership_type=null (created before feature). Frontend handles this correctly by treating null as 'outside_property'.",
+    "Sales Report only shows properties with service entries - 'Our Property' test properties don't appear because no transactions exist for them."
+  ],
+  "updated_files": [
+    "/app/backend/server.py - Fixed ObjectId serialization in create_property endpoint",
+    "/app/backend/tests/test_ownership_type.py - Created comprehensive tests"
+  ],
+  "success_rate": {
+    "backend": "100% (11/11 tests passed)",
+    "frontend": "100% (All ownership type UI features verified)"
+  },
+  "test_credentials": {
+    "admin_login": ["admin", "nirvaanabysunrise@gmail.com"],
+    "admin_password": "admin123"
+  },
+  "seed_data_creation": "Test properties created: TEST_Our_Property_01, TEST_Our_Property_02, TEST_Our_Property_API (all ownership_type='our_property')",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Property Ownership Type feature fully tested. Two types: 'our_property' (100% Nirvaana, green 'Owned' badge) and 'outside_property' (revenue split, orange 'Split Model' badge). Revenue share % and Contract Date fields are disabled when 'Our Property' is selected. Ownership change confirmation dialog works when editing existing properties.",
+  "features_tested": {
+    "ownership_type_selection": {
+      "radio_buttons_visible": "PASS - 'Our Property (100% owned)' and 'Outside Property (Revenue split)' radio buttons in Add/Edit Property form",
+      "default_value": "PASS - Default is 'outside_property'",
+      "field_disabling": "PASS - Revenue share % and Contract Start Date fields disabled when 'Our Property' selected",
+      "placeholder_text": "PASS - Shows 'Not applicable for owned properties' placeholder and '100% revenue belongs to Nirvaana' message"
+    },
+    "ownership_badges": {
+      "green_owned_badge": "PASS - Properties with ownership_type='our_property' show green 'Owned' badge",
+      "orange_split_badge": "PASS - Properties with ownership_type='outside_property' or null show orange 'Split Model' badge",
+      "card_styling": "PASS - Owned property cards show green icon, '100% Nirvaana' text, and N/A for contact fields"
+    },
+    "ownership_change_dialog": {
+      "dialog_appears": "PASS - 'Change Ownership Type?' confirmation dialog appears when changing ownership in Edit Property form",
+      "warning_message": "PASS - Shows impact warning about reports and settlements",
+      "buttons": "PASS - Cancel and Confirm Change buttons work correctly"
+    },
+    "reports_page": {
+      "bar_chart": "PASS - Grouped bar chart showing 'Our Base Share vs Expenses by Property' with gold and red bars",
+      "sales_report_dialog": "PASS - Sales Report shows N/A for Hotel columns when property is 'our_property'",
+      "settlement_explanation": "PASS - Explanation section includes 'Owned Properties: 100% revenue to Nirvaana - No hotel share or settlement applicable'",
+      "csv_download": "PASS - CSV download includes 'Ownership Type' column with 'Owned (100%)' or 'Split Model' values"
+    },
+    "backend_api": {
+      "create_our_property": "PASS - POST /api/properties with ownership_type='our_property' creates property correctly",
+      "create_outside_property": "PASS - POST /api/properties with ownership_type='outside_property' creates property correctly",
+      "update_ownership": "PASS - PUT /api/properties/{id} can update ownership_type",
+      "get_properties": "PASS - GET /api/properties returns ownership_type field",
+      "enum_validation": "PASS - Invalid ownership_type values rejected with 422 error"
+    }
+  },
+  "bug_fixes_applied": [
+    {
+      "file": "/app/backend/server.py",
+      "issue": "MongoDB ObjectId serialization error in create_property endpoint",
+      "fix": "Added prop_dict.pop('_id', None) before returning the response to remove the ObjectId added by MongoDB insert_one()",
+      "line": "~170"
+    }
+  ]
+}
