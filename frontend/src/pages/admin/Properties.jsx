@@ -354,7 +354,7 @@ const AdminProperties = ({ user, onLogout }) => {
                   <Label className="text-base font-medium mb-3 block">Ownership Type *</Label>
                   <RadioGroup
                     value={formData.ownership_type}
-                    onValueChange={(value) => setFormData({ ...formData, ownership_type: value })}
+                    onValueChange={editingProperty ? handleOwnershipChange : (value) => setFormData({ ...formData, ownership_type: value })}
                     className="flex gap-6"
                   >
                     <div className="flex items-center space-x-2">
